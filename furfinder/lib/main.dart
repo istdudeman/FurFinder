@@ -1,29 +1,83 @@
 import 'package:flutter/material.dart';
 import 'camera_view_page.dart';
 
-
+// -------------------- USER ROLE --------------------
 enum UserRole { admin, customer }
-
 
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Fur Finder',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Sans'), // match your mockup font
-      home: const PetHomePage(),
+      theme: ThemeData(fontFamily: 'Sans'),
+      home: const RoleSelectionPage(),
+    );
+  }
+}
+
+// -------------------- ROLE SELECTION --------------------
+class RoleSelectionPage extends StatelessWidget {
+  const RoleSelectionPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Select Role",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PetHomePage(role: UserRole.admin),
+                    ),
+                  );
+                },
+                child: const Text("Admin"),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => const PetHomePage(role: UserRole.customer),
+                    ),
+                  );
+                },
+                child: const Text("Customer"),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
 // -------------------- HOME PAGE --------------------
-
 class PetHomePage extends StatelessWidget {
-  const PetHomePage({super.key});
+  final UserRole role;
+
+  const PetHomePage({super.key, required this.role});
+
+  bool get isAdmin => role == UserRole.admin;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +86,6 @@ class PetHomePage extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // Gradient background
             Container(
               height: 300,
               decoration: const BoxDecoration(
@@ -41,22 +94,36 @@ class PetHomePage extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.only(bottomRight: Radius.circular(80)),
+                borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(80),
+                ),
               ),
             ),
             Column(
               children: [
-                // Top Header Section (emoji + add profile)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.notifications_none, color: Colors.white),
-                          Icon(Icons.phone, color: Colors.white),
+                          const Icon(
+                            Icons.notifications_none,
+                            color: Colors.white,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const RoleSelectionPage(),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -64,9 +131,9 @@ class PetHomePage extends StatelessWidget {
                         "Halo",
                         style: TextStyle(fontSize: 16, color: Colors.white),
                       ),
-                      const Text(
-                        "Pingu !",
-                        style: TextStyle(
+                      Text(
+                        isAdmin ? "Admin!" : "Pingu!",
+                        style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -93,49 +160,55 @@ class PetHomePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Center(
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.brown[800],
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const AddPetProfilePage(),
+                      if (!isAdmin)
+                        Center(
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.brown[800],
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
                                 ),
-                              );
-                            },
-                            child: const Text(
-                              "Add Pet Profile",
-                              style: TextStyle(fontSize: 16, color: Colors.white),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const AddPetProfilePage(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Add Pet Profile",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Scrollable Section
                 Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.only(topLeft: Radius.circular(30)),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                      ),
                     ),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Service Category Grid
                           GridView.count(
                             crossAxisCount: 3,
                             shrinkWrap: true,
@@ -143,9 +216,24 @@ class PetHomePage extends StatelessWidget {
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
                             children: [
-                              _serviceCard(context, "Bathing", Icons.bathtub, const Color(0xFFD9D1BD)),
-                              _serviceCard(context, "Nail\nTrimmer", Icons.cut, const Color(0xFFD6A55D)),
-                              _serviceCard(context, "Hair\ncut", Icons.content_cut, const Color(0xFF78824B)),
+                              _serviceCard(
+                                context,
+                                "Bathing",
+                                Icons.bathtub,
+                                const Color(0xFFD9D1BD),
+                              ),
+                              _serviceCard(
+                                context,
+                                "Nail\nTrimmer",
+                                Icons.cut,
+                                const Color(0xFFD6A55D),
+                              ),
+                              _serviceCard(
+                                context,
+                                "Hair\ncut",
+                                Icons.content_cut,
+                                const Color(0xFF78824B),
+                              ),
                               _placeholderCard('🐕'),
                               _placeholderCard('🐈'),
                               _placeholderCard('🦜'),
@@ -154,7 +242,10 @@ class PetHomePage extends StatelessWidget {
                           const SizedBox(height: 30),
                           const Text(
                             "Live Cameras",
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           SingleChildScrollView(
@@ -182,18 +273,19 @@ class PetHomePage extends StatelessWidget {
     );
   }
 
-  // Service Card Widget
-  Widget _serviceCard(BuildContext context, String title, IconData icon, Color color) {
+  Widget _serviceCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color,
+  ) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => CategoryPage(
-              title: title,
-              emoji: '🐾',
-              bgColor: color,
-            ),
+            builder:
+                (_) => CategoryPage(title: title, emoji: '🐾', bgColor: color),
           ),
         );
       },
@@ -217,7 +309,6 @@ class PetHomePage extends StatelessWidget {
     );
   }
 
-  // Placeholder Card Widget
   Widget _placeholderCard(String emoji) {
     return Container(
       decoration: BoxDecoration(
@@ -238,15 +329,12 @@ class PetHomePage extends StatelessWidget {
     );
   }
 
-  // Camera Card Widget
   Widget _cameraCard(BuildContext context, String title, String emoji) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => CameraViewPage(cameraTitle: title),
-          ),
+          MaterialPageRoute(builder: (_) => CameraViewPage(cameraTitle: title)),
         );
       },
       child: SizedBox(
@@ -272,7 +360,6 @@ class PetHomePage extends StatelessWidget {
     );
   }
 }
-
 
 // -------------------- CATEGORY PAGE --------------------
 class CategoryPage extends StatelessWidget {
