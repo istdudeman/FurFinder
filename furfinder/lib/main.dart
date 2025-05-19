@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'camera_view_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 
 // -------------------- USER ROLE --------------------
 enum UserRole { admin, customer }
@@ -510,8 +513,69 @@ class CategoryPage extends StatelessWidget {
 }
 
 // -------------------- ADD PET PROFILE PAGE --------------------
-class AddPetProfilePage extends StatelessWidget {
+class AddPetProfilePage extends StatefulWidget {
   const AddPetProfilePage({super.key});
+
+  @override
+  State<AddPetProfilePage> createState() => _AddPetProfilePageState();
+}
+
+class _AddPetProfilePageState extends State<AddPetProfilePage> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController breedController = TextEditingController();
+  final TextEditingController ageController = TextEditingController();
+
+  Future<void> addPetProfile(String name, String breed, int age) async {
+    final url = Uri.parse('https://fd26-118-99-84-6.ngrok-free.app/api/pets/add'); // Gunakan 10.0.2.2 jika pakai emulator Android
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'name': name,
+        'breed': breed,
+        'age': age,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      final responseData = json.decode(response.body);
+      print('Hewan peliharaan berhasil ditambahkan: ${responseData['message']}');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          content: const Text(
+            "SUCCESS",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).pop();
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      print('Gagal menambahkan hewan peliharaan: ${response.body}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal menambahkan hewan peliharaan")),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    breedController.dispose();
+    ageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -565,6 +629,7 @@ class AddPetProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   TextField(
+                    controller: nameController,
                     decoration: InputDecoration(
                       hintText: "e.g. Bruno",
                       filled: true,
@@ -584,6 +649,7 @@ class AddPetProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   TextField(
+                    controller: breedController,
                     decoration: InputDecoration(
                       hintText: "e.g. Golden Retriever",
                       filled: true,
@@ -603,6 +669,7 @@ class AddPetProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   TextField(
+                    controller: ageController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       hintText: "e.g. 3",
@@ -621,39 +688,23 @@ class AddPetProfilePage extends StatelessWidget {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.brown[800],
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 30,
-                          vertical: 14,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       onPressed: () {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder:
-                              (ctx) => AlertDialog(
-                                content: const Text(
-                                  "SUCCESS",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx).pop(); // close dialog
-                                      Navigator.of(context).pop(); // go home
-                                    },
-                                    child: const Text("OK"),
-                                  ),
-                                ],
-                              ),
-                        );
+                        final name = nameController.text.trim();
+                        final breed = breedController.text.trim();
+                        final age = int.tryParse(ageController.text.trim()) ?? 0;
+
+                        if (name.isNotEmpty && breed.isNotEmpty && age > 0) {
+                          addPetProfile(name, breed, age);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Harap isi semua data dengan benar")),
+                          );
+                        }
                       },
                       child: const Text(
                         "ADD NOW",
@@ -670,13 +721,3 @@ class AddPetProfilePage extends StatelessWidget {
     );
   }
 }
-
-//Widget _chip(String label) {
-//  return Padding(
-//    padding: const EdgeInsets.symmetric(horizontal: 6),
-//    child: Chip(
-//      label: Text(label, style: const TextStyle(color: Colors.white)),
-//      backgroundColor: const Color(0xFF9A7AFF)
-//   ),
-//  );
-//}
