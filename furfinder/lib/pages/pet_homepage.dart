@@ -158,6 +158,7 @@ class PetHomePage extends StatelessWidget {
                                 icon: Icons.bathtub,
                                 color: Color(0xFFD9D1BD),
                                 role: role,
+                                petID: '9a70df3a-d86d-4d61-bc21-860afc684bc5',
                               ),
                               ServiceCard(
                                 //
@@ -165,6 +166,7 @@ class PetHomePage extends StatelessWidget {
                                 icon: Icons.cut,
                                 color: Color(0xFFD6A55D),
                                 role: role,
+                                petID: '9a70df3a-d86d-4d61-bc21-860afc684bc5',
                               ),
                               ServiceCard(
                                 //
@@ -172,6 +174,7 @@ class PetHomePage extends StatelessWidget {
                                 icon: Icons.content_cut,
                                 color: Color(0xFF78824B),
                                 role: role,
+                                petID: '9a70df3a-d86d-4d61-bc21-860afc684bc5',
                               ),
                               PlaceholderCard(emoji: '🐕'),
                               PlaceholderCard(emoji: '🐈'),

@@ -17,7 +17,7 @@ class _AddPetProfilePageState extends State<AddPetProfilePage> {
   Future<void> addPetProfile(String name, String breed, int age) async {
     // IMPORTANT: This ngrok URL is temporary and will change.
     // Replace with your actual backend URL or use 10.0.2.2 for Android emulator if backend runs locally.
-    final url = Uri.parse('https://fd26-118-99-84-6.ngrok-free.app/api/pets/add');
+    final url = Uri.parse('https://dca8-103-159-199-164.ngrok-free.app/api/pets/add');
 
     try {
       final response = await http.post(
