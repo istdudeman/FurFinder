@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
-import '../pages/camera_view_page.dart';
+// The import for CameraViewPage is no longer strictly needed here
+// if the navigation is handled by the onTap callback provided by the parent.
+// iTS OKAY TO KEEP IT HERE. JUST FOR CLARITY ON HOW TO PARSE THINGS BY PARENT AND CHILD.
+// import 'package:fur_finder/pages/camera_view_page.dart';
 
 class CameraCard extends StatelessWidget {
   final String title;
   final String emoji;
+  final VoidCallback onTap; 
 
-  const CameraCard({super.key, required this.title, required this.emoji});
+  const CameraCard({
+    super.key,
+    required this.title,
+    required this.emoji,
+    required this.onTap, 
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => CameraViewPage(cameraTitle: title)),
-        );
-      },
+      onTap: onTap, // <-- USE THE 'onTap' PARAMETER HERE
       child: SizedBox(
         width: 100,
         child: Column(

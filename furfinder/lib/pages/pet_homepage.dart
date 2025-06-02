@@ -7,9 +7,12 @@ import '../pages/role_selection.dart';
 import '../widgets/camera_card.dart';
 import '../widgets/placeholder_card.dart';
 import '../widgets/service_card.dart';
+import '../pages/activity_log_page.dart'; // <-- IMPORT THIS
 
 class PetHomePage extends StatelessWidget {
   final UserRole role;
+
+  final String currentPetID = "pingu_001";
 
   const PetHomePage({super.key, required this.role});
 
@@ -45,10 +48,21 @@ class PetHomePage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(
-                            Icons.notifications_none,
-                            color: Colors.white,
+                          // --- MODIFICATION STARTS HERE ---
+                          IconButton( // Changed from Icon to IconButton
+                            icon: const Icon(
+                              Icons.notifications_none,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ActivityLogPage()),
+                              );
+                            },
+                            tooltip: 'Activity Log', // Optional: for accessibility
                           ),
+                          // --- MODIFICATION ENDS HERE ---
                           IconButton(
                             icon: const Icon(Icons.logout, color: Colors.white),
                             onPressed: () {
@@ -153,32 +167,29 @@ class PetHomePage extends StatelessWidget {
                             mainAxisSpacing: 10,
                             children: [
                               ServiceCard(
-                                //
                                 title: "Bathing",
                                 icon: Icons.bathtub,
-                                color: Color(0xFFD9D1BD),
+                                color: const Color(0xFFD9D1BD),
                                 role: role,
-                                petID: '9a70df3a-d86d-4d61-bc21-860afc684bc5',
+                                petID: currentPetID,
                               ),
                               ServiceCard(
-                                //
                                 title: "Nail\nTrimmer",
                                 icon: Icons.cut,
-                                color: Color(0xFFD6A55D),
+                                color: const Color(0xFFD6A55D),
                                 role: role,
-                                petID: '9a70df3a-d86d-4d61-bc21-860afc684bc5',
+                                petID: currentPetID,
                               ),
                               ServiceCard(
-                                //
                                 title: "Hair\ncut",
                                 icon: Icons.content_cut,
-                                color: Color(0xFF78824B),
+                                color: const Color(0xFF78824B),
                                 role: role,
-                                petID: '9a70df3a-d86d-4d61-bc21-860afc684bc5',
+                                petID: currentPetID,
                               ),
-                              PlaceholderCard(emoji: '🐕'),
-                              PlaceholderCard(emoji: '🐈'),
-                              PlaceholderCard(emoji: '🦜'),
+                              const PlaceholderCard(emoji: '🐕'),
+                              const PlaceholderCard(emoji: '🐈'),
+                              const PlaceholderCard(emoji: '🦜'),
                             ],
                           ),
                           const SizedBox(height: 30),
@@ -190,15 +201,33 @@ class PetHomePage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          SingleChildScrollView(
+                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
-                              children: const [
-                                CameraCard(title: "Cage Camera", emoji: "📷"),
-                                SizedBox(width: 10),
-                                CameraCard(title: "Playground 1", emoji: "🏞️"),
-                                SizedBox(width: 10),
-                                CameraCard(title: "Playground 2", emoji: "🏕️"),
+                              children: [
+                                CameraCard(
+                                  title: "Cage Camera",
+                                  emoji: "📷",
+                                  onTap: () {
+                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CameraViewPage(cameraTitle: "Cage Camera")));
+                                  }
+                                ),
+                                const SizedBox(width: 10),
+                                CameraCard(
+                                  title: "Playground 1",
+                                  emoji: "🏞️",
+                                  onTap: () {
+                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CameraViewPage(cameraTitle: "Playground 1")));
+                                  }
+                                ),
+                                const SizedBox(width: 10),
+                                CameraCard(
+                                  title: "Playground 2",
+                                  emoji: "🏕️",
+                                  onTap: () {
+                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CameraViewPage(cameraTitle: "Playground 2")));
+                                  }
+                                ),
                               ],
                             ),
                           ),
