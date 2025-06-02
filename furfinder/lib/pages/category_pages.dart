@@ -20,7 +20,7 @@ class CategoryPage extends StatefulWidget {
 
   @override
   State<CategoryPage> createState() => _CategoryPageState();
-}
+} 
 
 class _CategoryPageState extends State<CategoryPage> {
   // Use a List in the state to allow modifications
