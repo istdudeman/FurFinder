@@ -9,6 +9,7 @@ class CategoryPage extends StatefulWidget {
   final String emoji;
   final Color bgColor;
   final UserRole role; // <-- Added role
+  final String petID;
 
   const CategoryPage({
     super.key,
@@ -16,6 +17,7 @@ class CategoryPage extends StatefulWidget {
     required this.emoji,
     required this.bgColor,
     required this.role, // <-- Added to constructor
+    required this.petID,
   });
 
   @override
@@ -143,7 +145,7 @@ class _CategoryPageState extends State<CategoryPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const ProfileCard(), // Your existing Profile Card
+                  ProfileCard(petID: widget.petID), // Your existing Profile Card
                   const SizedBox(height: 30),
                   const Text(
                     "History",

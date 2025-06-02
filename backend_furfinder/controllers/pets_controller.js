@@ -10,14 +10,24 @@ exports.ShowPetData = async (req,res) =>{
     try 
     {
       const result = await pool.query(
-        `SELECT name, breed, age, animal_photo, services_history FROM pets WHERE user_id = $1`,
-        [id]
+      `SELECT 
+         p.name,
+         p.breed,
+         p.age,
+         s.services_name,
+         b.date
+       FROM bookings b
+       JOIN pets p ON b.animal_id = p.animal_id
+       JOIN services s ON b.services_id = s.services_id
+       WHERE p.animal_id = $1
+       ORDER BY b.date DESC`,
+      [id]
       );
       if(result.rows.length === 0){
         return res.status(404).json({ message: 'Data hewan tidak ditemukan'})
       }
 
-      const pets = result.rows;
+      const pets = result.rows[0];
       res.status(200).json(pets);
     } catch (error) {
       console.error(error);
@@ -27,14 +37,14 @@ exports.ShowPetData = async (req,res) =>{
 
 exports.Addpets = async (req,res) => {
   console.log("Request Body:", req.body);
-  const { name, breed, age, animal_photo, services_history} = req.body;
+  const { name, breed, age, services, date} = req.body;
 
   try {
     const user_id = 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d';
     const result = await pool.query(
-      `INSERT INTO pets (name, breed, age, animal_photo, services_history, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [name, breed, age, animal_photo, services_history, user_id]
+      `INSERT INTO pets (name, breed, age, services, date)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [name, breed, age, services, date]
     );
 
     res.status(201).json({

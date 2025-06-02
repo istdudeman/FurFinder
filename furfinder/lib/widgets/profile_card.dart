@@ -1,10 +1,51 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class ProfileCard extends StatelessWidget {
-  const ProfileCard({super.key});
+class ProfileCard extends StatefulWidget {
+  final String petID;
+
+  const ProfileCard({Key? key, required this.petID}) : super(key: key);
+
+  @override
+  State<ProfileCard> createState() => _ProfileCardState();
+}
+
+class _ProfileCardState extends State<ProfileCard> {
+  Map<String, dynamic>? petData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPetData();
+  }
+
+  Future<void> fetchPetData() async {
+    final url = Uri.parse(
+        'https://165f-103-159-199-164.ngrok-free.app/api/pets/${widget.petID}');
+    print("Pet ID yang dikirim: ${widget.petID}");
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        setState(() {
+          petData = jsonDecode(response.body);
+          isLoading = false;
+        });
+      } else {
+        print("Gagal mendapatkan data hewan: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching data pets: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading || petData == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -23,26 +64,32 @@ class ProfileCard extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  "Rafa",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  petData!['name'] ?? 'Nama tidak ada',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                Text("Bathing", style: TextStyle(color: Colors.black54)),
                 Text(
-                  "Alamat toko",
-                  style: TextStyle(color: Colors.black45, fontSize: 12),
+                  petData!['service'] ?? 'Jenis layanan',
+                  style: const TextStyle(color: Colors.black54),
+                ),
+                Text(
+                  petData!['location'] ?? 'Alamat toko tidak tersedia',
+                  style: const TextStyle(color: Colors.black45, fontSize: 12),
                 ),
               ],
             ),
           ),
           Column(
-            children: const [
+            children: [
               Text(
-                "30",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                petData!['day']?.toString() ?? "0",
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-              Text("March", style: TextStyle(fontSize: 12)),
+              Text(
+                petData!['month'] ?? "Unknown",
+                style: const TextStyle(fontSize: 12),
+              ),
             ],
           ),
         ],
