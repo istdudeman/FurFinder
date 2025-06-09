@@ -26,7 +26,7 @@ class ServiceCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder:
-                (_) => CategoryPage(title: title, emoji: '🐾', bgColor: color, role: role, petID: '9a70df3a-d86d-4d61-bc21-860afc684bc5'),
+                (_) => CategoryPage(title: title, emoji: '🐾', bgColor: color, role: role, petID: '318C502E'),
           ),
         );
       },
