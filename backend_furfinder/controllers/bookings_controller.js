@@ -2,6 +2,10 @@ const pool = require('../db');
 const jwt = require('jsonwebtoken');
 const { message } = require('statuses');
 
+router.post ('/addbookings', AddBookings);
+
+module.exports = router;
+
 exports.AddBookings = async (req,res) => {
     console.log("Request Body:", req.body);
     const { booking_id, start_date, end_date, status, total_price} = req.body;

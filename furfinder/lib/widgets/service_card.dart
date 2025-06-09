@@ -8,6 +8,7 @@ class ServiceCard extends StatelessWidget {
   final Color color;
   final UserRole role;
   final String petID;
+  final String serviceID; // Define the new parameter
 
   const ServiceCard({
     super.key,
@@ -15,7 +16,8 @@ class ServiceCard extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.role,
-    required this.petID, 
+    required this.petID,
+    required this.serviceID, // Add it to the constructor
   });
 
   @override
@@ -26,7 +28,15 @@ class ServiceCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder:
-                (_) => CategoryPage(title: title, emoji: '🐾', bgColor: color, role: role, petID: '9a70df3a-d86d-4d61-bc21-860afc684bc5'),
+                // Pass the serviceID to the CategoryPage
+                (_) => CategoryPage(
+                  title: title, 
+                  emoji: '🐾', 
+                  bgColor: color, 
+                  role: role, 
+                  petID: petID,
+                  serviceID: serviceID, // Pass it here
+                ),
           ),
         );
       },

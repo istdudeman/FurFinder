@@ -7,12 +7,13 @@ import '../pages/role_selection.dart';
 import '../widgets/camera_card.dart';
 import '../widgets/placeholder_card.dart';
 import '../widgets/service_card.dart';
-import '../pages/activity_log_page.dart'; // <-- IMPORT THIS
+import '../pages/activity_log_page.dart';
+import 'transactions_page.dart'; // Import the new page
 
 class PetHomePage extends StatelessWidget {
   final UserRole role;
 
-  final String currentPetID = "pingu_001";
+  final String currentPetID = "9a70df3a-d86d-4d61-bc21-860afc684bc5"; // Using a valid pet ID from your project
 
   const PetHomePage({super.key, required this.role});
 
@@ -49,18 +50,37 @@ class PetHomePage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           // --- MODIFICATION STARTS HERE ---
-                          IconButton( // Changed from Icon to IconButton
-                            icon: const Icon(
-                              Icons.notifications_none,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const ActivityLogPage()),
-                              );
-                            },
-                            tooltip: 'Activity Log', // Optional: for accessibility
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.shopping_basket_outlined, color: Colors.white),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => TransactionPage(
+                                        petID: currentPetID,
+                                        // No serviceID is passed, allowing user to select from the dropdown
+                                      ),
+                                    ),
+                                  );
+                                },
+                                tooltip: 'New Booking',
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.notifications_none,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const ActivityLogPage()),
+                                  );
+                                },
+                                tooltip: 'Activity Log',
+                              ),
+                            ],
                           ),
                           // --- MODIFICATION ENDS HERE ---
                           IconButton(
@@ -172,6 +192,7 @@ class PetHomePage extends StatelessWidget {
                                 color: const Color(0xFFD9D1BD),
                                 role: role,
                                 petID: currentPetID,
+                                serviceID: "1b7790d8-987d-41f9-bb53-5a078c8be1de",
                               ),
                               ServiceCard(
                                 title: "Nail\nTrimmer",
@@ -179,6 +200,7 @@ class PetHomePage extends StatelessWidget {
                                 color: const Color(0xFFD6A55D),
                                 role: role,
                                 petID: currentPetID,
+                                serviceID: "e2c3b5a1-4f89-4b1a-9c2e-7d6f5c8a4b3d", // Example ID
                               ),
                               ServiceCard(
                                 title: "Hair\ncut",
@@ -186,6 +208,7 @@ class PetHomePage extends StatelessWidget {
                                 color: const Color(0xFF78824B),
                                 role: role,
                                 petID: currentPetID,
+                                serviceID: "f4a5c6b2-8e9d-4f7c-a1b3-6d5e4f3a2b1c", // Example ID
                               ),
                               const PlaceholderCard(emoji: '🐕'),
                               const PlaceholderCard(emoji: '🐈'),

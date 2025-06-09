@@ -2,6 +2,10 @@ const pool = require('../db');
 const jwt = require('jsonwebtoken');
 const { message } = require('statuses');
 
+router.get('/:id', Showservices);
+
+module.exports = router; 
+
 exports.ShowServices = async (req,res) =>{
     const { id } = req.params;
 
