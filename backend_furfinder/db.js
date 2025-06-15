@@ -1,4 +1,8 @@
-const { Pool } = require('pg')
+const { Pool, types } = require('pg')
+
+types.setTypeParser(1700, (val) => {
+  return val === null ? null : parseFloat(val);
+});
 
 require('dotenv').config();
 

@@ -15,12 +15,13 @@ exports.ShowPetData = async (req,res) =>{
           p.breed,
           p.age,
           s.services_name,
-          b.date
+          b.start_date,
+          b.end_date
         FROM bookings b
         JOIN pets p ON b.animal_id = p.animal_id
         JOIN services s ON b.services_id = s.services_id
         WHERE p.animal_id = $1
-        ORDER BY b.date DESC`,
+        ORDER BY b.start_date DESC`,
         [id]
         );
       if(result.rows.length === 0){
