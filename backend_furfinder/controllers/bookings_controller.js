@@ -16,6 +16,11 @@ exports.AddBookings = async (req,res) => {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
         [booking_id, start_date, end_date, status, total_price, user_id, animal_id, cage_id, services_id]
       );
+
+      await pool.query(
+        `UPDATE cage SET status = $1, animal_id = $2 WHERE cage_id = $3`,
+        ['occupied', animal_id, cage_id]
+      );
   
       res.status(201).json({
         message: 'Booking Berhasil',
