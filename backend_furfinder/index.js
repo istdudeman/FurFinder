@@ -9,6 +9,7 @@ const petsrouter = require('./routes/pets_routes');
 const servicesrouter = require('./routes/services_routes');
 const cagerouter = require('./routes/cage_routes');
 const bookingsrouter = require('./routes/bookings_router');
+const cameraRouter = require('./routes/camera_routes');
 
 app.use(bodyParser.json());
 
@@ -17,6 +18,7 @@ app.use('/api/pets', petsrouter);
 app.use('/api/services', servicesrouter);
 app.use('/api/cage', cagerouter);
 app.use('/api/booking', bookingsrouter);
+app.use('/api/camera', cameraRouter);
 
 
 app.listen(3000, '0.0.0.0', async ()=>{
