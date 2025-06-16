@@ -232,7 +232,9 @@ class PetHomePage extends StatelessWidget {
                                   title: "Cage Camera",
                                   emoji: "📷",
                                   onTap: () {
-                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CameraViewPage(cameraTitle: "Cage Camera")));
+                                     Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
+                                      cameraTitle: "Cage Camera",
+                                      petID: currentPetID)));
                                   }
                                 ),
                                 const SizedBox(width: 10),
@@ -240,7 +242,9 @@ class PetHomePage extends StatelessWidget {
                                   title: "Playground 1",
                                   emoji: "🏞️",
                                   onTap: () {
-                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CameraViewPage(cameraTitle: "Playground 1")));
+                                     Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
+                                      cameraTitle: "Playground 1",
+                                      petID: currentPetID)));
                                   }
                                 ),
                                 const SizedBox(width: 10),
@@ -248,7 +252,9 @@ class PetHomePage extends StatelessWidget {
                                   title: "Playground 2",
                                   emoji: "🏕️",
                                   onTap: () {
-                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CameraViewPage(cameraTitle: "Playground 2")));
+                                     Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
+                                      cameraTitle: "Playground 2",
+                                      petID: currentPetID)));
                                   }
                                 ),
                               ],

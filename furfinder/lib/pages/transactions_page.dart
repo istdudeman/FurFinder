@@ -31,7 +31,7 @@ class _TransactionPageState extends State<TransactionPage> {
   bool _isLoading = true;
 
   // IMPORTANT: Replace with your actual ngrok URL
-  final String ngrokUrl = "https://b70c-182-253-50-80.ngrok-free.app";
+  final String ngrokUrl = "https://c34b-182-253-50-98.ngrok-free.app";
 
   @override
   void initState() {
