@@ -2,18 +2,12 @@ const pool = require('../db');
 const jwt = require('jsonwebtoken');
 const { message } = require('statuses');
 
-router.get('/:id', Showservices);
-
-module.exports = router; 
-
 exports.ShowServices = async (req,res) =>{
-    const { id } = req.params;
 
     try 
     {
       const result = await pool.query(
-        `SELECT services_name, description, price FROM services WHERE services_id = $1`,
-        [id]
+        `SELECT * FROM services`,
       );
       if(result.rows.length === 0){
         return res.status(404).json({ message: 'Services tidak ditemukan'})

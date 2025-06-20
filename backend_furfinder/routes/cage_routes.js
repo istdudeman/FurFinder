@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { ShowCageInfo } = require('../controllers/cage_controller')
+const { ShowCage } = require('../controllers/cage_controller')
 
-router.get('/:id', ShowCageInfo); 
+router.get('/list', ShowCage); 
 
 module.exports = router

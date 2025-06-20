@@ -6,10 +6,10 @@ const https = require('https');
 const { URL } = require('url');
 
 exports.streamCamera = async (req, res) => {
-    const { animal_id } = req.params;
-    console.log("Received request for animal_id:", animal_id);
+  const { animal_id } = req.params;
+  console.log("Received request for animal_id:", animal_id);
 
-    try {
+  try {
     const result = await pool.query(
       `SELECT url FROM camera WHERE animal_id = $1 LIMIT 1`,
       [animal_id]
@@ -22,21 +22,11 @@ exports.streamCamera = async (req, res) => {
     }
 
     const streamUrl = result.rows[0].url;
-    const parsedUrl = new URL(streamUrl);
-    const client = parsedUrl.protocol === 'https:' ? https : http;
-
-    client.get(streamUrl, (streamRes) => {
-      res.writeHead(200, {
-        'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
-      });
-      streamRes.pipe(res);
-    }).on('error', (err) => {
-      console.error('Gagal menyambung ke ESP32:', err);
-      res.status(500).send('Gagal menyambung ke kamera');
-    });
-
     
-} catch (err) {
+    // 👉 Kirim URL ke frontend (Flutter)
+    return res.status(200).json({ url: streamUrl });
+
+  } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Gagal mengambil URL kamera dari database' });
   }

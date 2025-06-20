@@ -23,7 +23,7 @@ class _ProfileCardState extends State<ProfileCard> {
 
   Future<void> fetchPetData() async {
     final url = Uri.parse(
-        'https://2979-182-253-50-36.ngrok-free.app/api/pets/${widget.petID}');
+        'https://c34b-182-253-50-98.ngrok-free.app/api/pets/${widget.petID}');
     print("Pet ID yang dikirim: ${widget.petID}");
     try {
       final response = await http.get(url);

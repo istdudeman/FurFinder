@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class TransactionPage extends StatefulWidget {
   final String petID;
@@ -30,7 +31,7 @@ class _TransactionPageState extends State<TransactionPage> {
   bool _isLoading = true;
 
   // IMPORTANT: Replace with your actual ngrok URL
-  final String ngrokUrl = "https://dca8-103-159-199-164.ngrok-free.app";
+  final String ngrokUrl = "https://c34b-182-253-50-98.ngrok-free.app";
 
   @override
   void initState() {
@@ -65,6 +66,7 @@ class _TransactionPageState extends State<TransactionPage> {
 
   Future<void> _fetchPetDetails() async {
     final response = await http.get(Uri.parse('$ngrokUrl/api/pets/${widget.petID}'));
+    print("Pet ID yang dikirim: ${widget.petID}");
     if (response.statusCode == 200) {
       _petDetails = json.decode(response.body);
     } else {
@@ -73,7 +75,7 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   Future<void> _fetchServices() async {
-    final response = await http.get(Uri.parse('$ngrokUrl/api/services'));
+    final response = await http.get(Uri.parse('$ngrokUrl/api/services/list'));
     if (response.statusCode == 200) {
       _services = json.decode(response.body);
     } else {
@@ -82,7 +84,8 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   Future<void> _fetchCages() async {
-    final response = await http.get(Uri.parse('$ngrokUrl/api/cages'));
+    final response = await http.get(Uri.parse('$ngrokUrl/api/cage/list'));
+    print("Cages JSON: ${response.body}");
     if (response.statusCode == 200) {
       _cages = json.decode(response.body);
     } else {
@@ -96,11 +99,18 @@ class _TransactionPageState extends State<TransactionPage> {
     }
 
     final days = _endDate!.difference(_startDate!).inDays;
+    print("Days difference: $days");
     if (days > 0) {
       final cage = _cages.firstWhere((c) => c['cage_id'] == _selectedCageId);
       final service = _services.firstWhere((s) => s['services_id'] == _selectedServiceId);
       final cagePricePerDay = (cage['price_per_day'] as num).toDouble();
       final servicePrice = (service['price'] as num).toDouble();
+
+      print("Cage Price Per Day: $cagePricePerDay");
+      print("Service Price: $servicePrice");
+      print("Days: $days");
+
+
       setState(() {
         _totalPrice = (days * cagePricePerDay) + servicePrice;
       });
@@ -145,10 +155,15 @@ class _TransactionPageState extends State<TransactionPage> {
     }
 
     final url = Uri.parse('$ngrokUrl/api/booking/addbookings');
+    final uuid = Uuid();
+    final bookingId = uuid.v4(); // generate random UUID
+
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
+        'booking_id': bookingId,
+        'user_id': 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d', // Replace with actual user ID
         'start_date': DateFormat('yyyy-MM-dd').format(_startDate!),
         'end_date': DateFormat('yyyy-MM-dd').format(_endDate!),
         'status': 'confirmed',
