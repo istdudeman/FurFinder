@@ -8,7 +8,8 @@ import '../widgets/camera_card.dart';
 import '../widgets/placeholder_card.dart';
 import '../widgets/service_card.dart';
 import '../pages/activity_log_page.dart';
-import 'transactions_page.dart'; // Import the new page
+import 'transactions_page.dart'; 
+import 'settings_page.dart';
 
 class PetHomePage extends StatelessWidget {
   final UserRole role;
