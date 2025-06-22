@@ -10,6 +10,7 @@ const servicesrouter = require('./routes/services_routes');
 const cagerouter = require('./routes/cage_routes');
 const bookingsrouter = require('./routes/bookings_router');
 const cameraRouter = require('./routes/camera_routes');
+const settingsRouter = require('./routes/settings_routes'); // Import the new settings router
 
 app.use(bodyParser.json());
 
@@ -19,10 +20,10 @@ app.use('/api/services', servicesrouter);
 app.use('/api/cage', cagerouter);
 app.use('/api/booking', bookingsrouter);
 app.use('/api/camera', cameraRouter);
+app.use('/api/settings', settingsRouter); // Use the new settings router
 
-
-app.listen(3000, '0.0.0.0', async ()=>{
-    console.log('berhasil jalan')
+app.listen(3000, '0.0.0.0', async () => {
+  console.log('berhasil jalan')
 
   try {
     const url = await ngrok.connect(3000);
