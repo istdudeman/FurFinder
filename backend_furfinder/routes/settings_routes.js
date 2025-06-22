@@ -2,12 +2,13 @@
 
 const express = require('express');
 const router = express.Router();
-const settingsController = require('../controllers/settings_controller'); // Import the settings controller
+const { addBeaconId, addTransmitterId } = require('../controllers/settings_controller'); // Import the settings controller
+ // Import the settings controller
 
-// Define a POST route for adding a new device.
-// This route expects a JSON body with 'deviceType' and 'deviceId'.
-// It will call the 'addDevice' function from the settingsController.
-router.post('/add-device', settingsController.addDevice);
+router.post('/addbeacon', addBeaconId);
+router.post('/addtransmitter', addTransmitterId); // Route to add transmitter ID
+ // Route to add device settings
+ // Route to add device settings
 
 // You can add other routes here, for example:
 // router.get('/devices', settingsController.getDevices); // Route to get all devices

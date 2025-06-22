@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -8,6 +10,9 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  // Ubah baseUrl sesuai endpoint kamu (gunakan IP lokal atau ngrok)
+  final String baseUrl = 'https://b5a5-2404-8000-1015-1a6b-a543-94e7-e667-22f3.ngrok-free.app';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,35 +43,30 @@ class _SettingsPageState extends State<SettingsPage> {
             leading: const Icon(Icons.bluetooth_searching, color: Colors.blue),
             title: const Text('Add Beacon'),
             subtitle: const Text('Add and configure a new beacon'),
-            onTap: () {
-              _showAddDeviceDialog('Beacon');
-            },
+            onTap: () => _showAddDeviceDialog('Beacon'),
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.wifi_tethering, color: Colors.orange),
             title: const Text('Add Transmitter'),
             subtitle: const Text('Add and configure a new transmitter'),
-            onTap: () {
-              _showAddDeviceDialog('Transmitter');
-            },
+            onTap: () => _showAddDeviceDialog('Transmitter'),
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.rss_feed, color: Colors.green),
             title: const Text('Add RFID Scanner'),
             subtitle: const Text('Add and configure a new RFID scanner'),
-            onTap: () {
-              _showAddDeviceDialog('RFID Scanner');
-            },
+            onTap: () => _showAddDeviceDialog('RFID Scanner'),
           ),
         ],
       ),
     );
   }
 
-  /// Shows a placeholder dialog for adding a device.
   void _showAddDeviceDialog(String deviceType) {
+    final TextEditingController controller = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -75,9 +75,8 @@ class _SettingsPageState extends State<SettingsPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text('This is where you would add a new $deviceType.'),
-              const SizedBox(height: 16),
               TextField(
+                controller: controller,
                 decoration: InputDecoration(
                   labelText: '$deviceType ID',
                   border: const OutlineInputBorder(),
@@ -88,20 +87,63 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             ElevatedButton(
               child: const Text('Add'),
               onPressed: () {
-                // TODO: Implement the logic to add the device
-                Navigator.of(context).pop();
+                final String id = controller.text.trim();
+                if (id.isNotEmpty) {
+                  _submitDevice(deviceType, id);
+                  Navigator.of(context).pop();
+                }
               },
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _submitDevice(String deviceType, String deviceId) async {
+    String url;
+    Map<String, dynamic> body;
+
+    // Penyesuaian endpoint dan payload berdasarkan deviceType
+    if (deviceType == 'Beacon') {
+      url = '$baseUrl/api/settings/addbeacon';
+      body = {'beacon_id': deviceId};
+    } else if (deviceType == 'Transmitter') {
+      url = '$baseUrl/api/settings/addtransmitter';
+      body = {'transmitter_id': deviceId};
+    } else if (deviceType == 'RFID Scanner') {
+      url = '$baseUrl/api/pets/rfid';
+      body = {'rfid': deviceId};
+    } else {
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$deviceType berhasil ditambahkan!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menambahkan $deviceType')),
+        );
+        print('Server response: ${response.body}');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan: $e')),
+      );
+    }
   }
 }

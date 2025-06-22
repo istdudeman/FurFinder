@@ -81,7 +81,7 @@ exports.saveRFID = async (req, res) => {
   const { rfid } = req.body;
   try {
     await pool.query('INSERT INTO pending_pets (animal_id) VALUES ($1) ON CONFLICT DO NOTHING', [rfid]);
-    res.status(201).json({ message: 'RFID saved' });
+    res.status(200).json({ message: 'RFID saved' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Gagal simpan RFID' });

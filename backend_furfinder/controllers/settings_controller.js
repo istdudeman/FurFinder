@@ -1,50 +1,79 @@
-// backend_furfinder/controllers/settings_controller.js
+const pool = require('../db');
 
-// This controller will handle the logic for settings-related operations.
-// Currently, the frontend's SettingsPage primarily manages UI for device addition
-// without direct backend interaction. Placeholder functions are provided here.
+// ✅ Fungsi untuk tambah beacon_id
+exports.addBeaconId = async (req, res) => {
+  const { beacon_id } = req.body;
+  if (!beacon_id) return res.status(400).json({ message: 'beacon_id harus diisi' });
 
-// Placeholder function for handling device addition.
-// If actual backend logic is required (e.g., saving device info to a database),
-// it would be implemented here.
-exports.addDevice = async (req, res) => {
-    const { deviceType, deviceId } = req.body; // Extract device type and ID from request body
+  try {
+    // Cari baris yang transmitter_id-nya masih kosong atau beacon_id-nya kosong
+    const existing = await pool.query(`
+      SELECT * FROM settings 
+      WHERE beacon_id IS NULL OR transmitter_id IS NULL 
+      LIMIT 1
+    `);
 
-    console.log(`Received request to add a ${deviceType} with ID: ${deviceId}`);
+    let result;
 
-    // In a real application, you would add logic here to:
-    // 1. Validate the input (deviceType, deviceId)
-    // 2. Interact with a database (e.g., PostgreSQL) to store device information
-    // 3. Handle potential errors (e.g., duplicate device ID, database connection issues)
-
-    try {
-        // Simulate a successful device addition
-        // For example, if you were to save to a database:
-        // const result = await pool.query(
-        //     `INSERT INTO devices (type, device_id) VALUES ($1, $2) RETURNING *`,
-        //     [deviceType, deviceId]
-        // );
-
-        res.status(200).json({
-            message: `Successfully added ${deviceType} with ID: ${deviceId}`, // Success message
-            // data: result.rows[0] // If data was returned from a database insert
-        });
-    } catch (error) {
-        console.error(`Error adding ${deviceType}:`, error); // Log the error
-        res.status(500).json({
-            message: `Failed to add ${deviceType}`, // Error message
-            error: error.message // Include error details for debugging
-        });
+    if (existing.rows.length > 0 && existing.rows[0].beacon_id == null) {
+      // Jika ada baris yang belum punya beacon_id, update
+      result = await pool.query(
+        `UPDATE settings SET beacon_id = $1 WHERE id = $2 RETURNING *`,
+        [beacon_id, existing.rows[0].id]
+      );
+    } else {
+      // Jika tidak ada baris yang bisa diupdate, insert baris baru
+      result = await pool.query(
+        `INSERT INTO settings (beacon_id) VALUES ($1) RETURNING *`,
+        [beacon_id]
+      );
     }
+
+    res.status(200).json({
+      message: 'Beacon ID berhasil disimpan',
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Gagal menyimpan beacon_id:', error);
+    res.status(500).json({ message: 'Gagal menyimpan beacon_id', error: error.message });
+  }
 };
 
-// You can add other settings-related functions here, for example:
-exports.getDevices = async (req, res) => {
-    // Logic to retrieve a list of configured devices
-    try {
-        // const devices = await pool.query('SELECT * FROM devices');
-        res.status(200).json({ message: 'List of devices (placeholder)' });
-    } catch (error) {
-        res.status(500).json({ message: 'Failed to get devices' });
+// ✅ Fungsi untuk tambah transmitter_id
+exports.addTransmitterId = async (req, res) => {
+  const { transmitter_id } = req.body;
+  if (!transmitter_id) return res.status(400).json({ message: 'transmitter_id harus diisi' });
+
+  try {
+    // Cari baris yang beacon_id-nya masih kosong atau transmitter_id-nya kosong
+    const existing = await pool.query(`
+      SELECT * FROM settings 
+      WHERE beacon_id IS NULL OR transmitter_id IS NULL 
+      LIMIT 1
+    `);
+
+    let result;
+
+    if (existing.rows.length > 0 && existing.rows[0].transmitter_id == null) {
+      // Jika ada baris yang belum punya transmitter_id, update
+      result = await pool.query(
+        `UPDATE settings SET transmitter_id = $1 WHERE id = $2 RETURNING *`,
+        [transmitter_id, existing.rows[0].id]
+      );
+    } else {
+      // Jika tidak ada baris yang bisa diupdate, insert baris baru
+      result = await pool.query(
+        `INSERT INTO settings (transmitter_id) VALUES ($1) RETURNING *`,
+        [transmitter_id]
+      );
     }
+
+    res.status(200).json({
+      message: 'Transmitter ID berhasil disimpan',
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Gagal menyimpan transmitter_id:', error);
+    res.status(500).json({ message: 'Gagal menyimpan transmitter_id', error: error.message });
+  }
 };
