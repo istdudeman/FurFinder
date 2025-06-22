@@ -8,8 +8,8 @@ import '../widgets/camera_card.dart';
 import '../widgets/placeholder_card.dart';
 import '../widgets/service_card.dart';
 import '../pages/activity_log_page.dart';
-import 'transactions_page.dart'; 
-import 'settings_page.dart';
+import 'transactions_page.dart';
+import 'settings_page.dart'; // Import the settings page
 
 class PetHomePage extends StatelessWidget {
   final UserRole role;
@@ -50,7 +50,6 @@ class PetHomePage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // --- MODIFICATION STARTS HERE ---
                           Row(
                             children: [
                               IconButton(
@@ -81,16 +80,30 @@ class PetHomePage extends StatelessWidget {
                                 },
                                 tooltip: 'Activity Log',
                               ),
+                              // New Settings Button
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.settings, // Settings icon
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const SettingsPage()), // Navigate to SettingsPage
+                                  );
+                                },
+                                tooltip: 'Settings', // Tooltip for the button
+                              ),
                             ],
                           ),
-                          // --- MODIFICATION ENDS HERE ---
                           IconButton(
                             icon: const Icon(Icons.logout, color: Colors.white),
                             onPressed: () {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const RoleSelectionPage(),
+                                  builder: (_) =>
+                                      const RoleSelectionPage(),
                                 ),
                               );
                             },
@@ -225,7 +238,7 @@ class PetHomePage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-                           SingleChildScrollView(
+                          SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
@@ -233,7 +246,7 @@ class PetHomePage extends StatelessWidget {
                                   title: "Cage Camera",
                                   emoji: "📷",
                                   onTap: () {
-                                     Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
                                       cameraTitle: "Cage Camera",
                                       petID: currentPetID)));
                                   }
@@ -243,7 +256,7 @@ class PetHomePage extends StatelessWidget {
                                   title: "Playground 1",
                                   emoji: "🏞️",
                                   onTap: () {
-                                     Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
                                       cameraTitle: "Playground 1",
                                       petID: currentPetID)));
                                   }
@@ -253,7 +266,7 @@ class PetHomePage extends StatelessWidget {
                                   title: "Playground 2",
                                   emoji: "🏕️",
                                   onTap: () {
-                                     Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => CameraViewPage(
                                       cameraTitle: "Playground 2",
                                       petID: currentPetID)));
                                   }
