@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Menambahkan data hewan dari pending_pets ke tabel pets
 Future<String?> addPetData({
   required String userId,
   required String name,
@@ -9,45 +10,21 @@ Future<String?> addPetData({
   final supabase = Supabase.instance.client;
 
   try {
-    // 1. Ambil 1 animal_id dari tabel pending_pets
-    final pendingResponse = await supabase
-        .from('pending_pets')
-        .select('animal_id')
-        .limit(1)
-        .maybeSingle();
-
-    final animalId = pendingResponse?['animal_id'];
-
-    if (animalId == null) {
-      return 'Tidak ada data RFID yang tersedia di pending_pets.';
+    // Ambil user_id dari akun yang login
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      return 'Pengguna belum login.';
     }
 
-    // 2. Insert ke tabel pets
-    final insertResponse = await supabase.from('pets').insert({
-      'animal_id': animalId,
-      'user_id': userId,
+    // 2. Insert ke tabel pets (animal_id akan di-generate otomatis)
+    await supabase.from('pets').insert({
+      'user_id': user.id,
       'name': name,
       'breed': breed,
       'age': age,
-      'services': null,
-      'date': DateTime.now().toIso8601String(),
     });
 
-    if (insertResponse != null && insertResponse.error != null) {
-      return 'Gagal menyimpan ke tabel pets: ${insertResponse.error!.message}';
-    }
-
-    // 3. Hapus dari pending_pets setelah sukses insert
-    final deleteResponse = await supabase
-        .from('pending_pets')
-        .delete()
-        .eq('animal_id', animalId);
-
-    if (deleteResponse != null && deleteResponse.error != null) {
-      return 'Data berhasil ditambahkan, tetapi gagal menghapus dari pending_pets: ${deleteResponse.error!.message}';
-    }
-
-    return null; // Sukses
+    return null; // Berhasil
   } catch (e) {
     return 'Terjadi kesalahan: $e';
   }
