@@ -135,14 +135,14 @@ class _TransactionPageState extends State<TransactionPage> {
       return;
     }
 
-    final success = await insertBooking(
-      petId: widget.petID,
-      cageId: _selectedCageId!,
-      serviceId: _selectedServiceId!,
-      startDate: _startDate!,
-      endDate: _endDate!,
-      totalPrice: _totalPrice,
-      userId: userId,
+      final success = await insertBooking(
+        petId: widget.petID, // ini diasumsikan sebagai TAG
+        cageId: _selectedCageId!,
+        serviceId: _selectedServiceId!,
+        startDate: _startDate!,
+        endDate: _endDate!,
+        totalPrice: _totalPrice,
+        userId: userId,
     );
 
     if (success) {

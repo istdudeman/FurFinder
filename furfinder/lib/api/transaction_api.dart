@@ -31,19 +31,70 @@ Future<String?> checkCageStatus(String cageId) async {
   return response?['status'];
 }
 
+
 Future<bool> insertBooking({
   required String petId,
+  required String userId,
   required String cageId,
   required String serviceId,
   required DateTime startDate,
   required DateTime endDate,
   required double totalPrice,
-  required String userId,
 }) async {
   final uuid = const Uuid();
   final bookingId = uuid.v4();
 
   try {
+    // Ambil user yang sedang login
+    final currentUser = supabase.auth.currentUser;
+
+    if (currentUser == null) {
+      print('❌ Tidak ada user yang login');
+      return false;
+    }
+
+    final userId = currentUser.id;
+
+    // Verifikasi animal_id di tabel pets
+    final petResponse = await supabase
+        .from('pets')
+        .select('animal_id')
+        .eq('animal_id', petId)
+        .maybeSingle();
+
+    if (petResponse == null || petResponse['animal_id'] == null) {
+      print('❌ animal_id tidak ditemukan di pets untuk petId: $petId');
+      return false;
+    }
+
+    final animalId = petResponse['animal_id'];
+
+    // Ambil rfid_tag terbaru dari pending_pets
+    final pendingPet = await supabase
+        .from('pending_pets')
+        .select('rfid_tag')
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (pendingPet != null && pendingPet['rfid_tag'] != null) {
+      final rfidTag = pendingPet['rfid_tag'];
+
+      // Update pets.rfid_tag
+      await supabase.from('pets').update({
+        'rfid_tag': rfidTag,
+      }).eq('animal_id', petId);
+
+      // Hapus rfid_tag dari pending_pets setelah berhasil diinput
+      await supabase
+          .from('pending_pets')
+          .delete()
+          .eq('rfid_tag', rfidTag);
+    } else {
+      print('⚠️ Tidak ditemukan rfid_tag dari pending_pets');
+    }
+
+    // Insert booking
     await supabase.from('bookings').insert({
       'booking_id': bookingId,
       'user_id': userId,
@@ -51,16 +102,18 @@ Future<bool> insertBooking({
       'end_date': endDate.toIso8601String(),
       'status': 'confirmed',
       'total_price': totalPrice,
-      'animal_id': petId,
+      'animal_id': animalId,
       'cage_id': cageId,
       'services_id': serviceId,
     });
+
     return true;
   } catch (e) {
     print('❌ Error inserting booking: $e');
     return false;
   }
 }
+
 
 Future<bool> updateCageStatus(String cageId, String animalId) async {
   try {
