@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_role.dart';
 import 'pet_homepage.dart';
+import 'registration_page.dart'; // Import the new registration page
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
@@ -166,8 +167,23 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const RegistrationPage(registrationRole: UserRole.admin), // Navigate to registration
+                    ),
+                  );
+                },
+                child: Text(
+                  'Register as Admin',
+                  style: TextStyle(color: Colors.brown[600]),
+                ),
+              ),
+              const SizedBox(height: 10), // Add some space
+              TextButton(
+                onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Admin registration/forgot password not implemented yet.')),
+                    const SnackBar(content: Text('Forgot password functionality not implemented yet.')),
                   );
                 },
                 child: Text(

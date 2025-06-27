@@ -1,56 +1,64 @@
-// furfinder/lib/pages/customer_login_page.dart
+// furfinder/lib/pages/registration_page.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_role.dart';
 import 'pet_homepage.dart';
-import 'registration_page.dart'; // Import the new registration page
 
-class CustomerLoginPage extends StatefulWidget {
-  const CustomerLoginPage({super.key});
+class RegistrationPage extends StatefulWidget {
+  final UserRole registrationRole;
+
+  const RegistrationPage({super.key, required this.registrationRole});
 
   @override
-  State<CustomerLoginPage> createState() => _CustomerLoginPageState();
+  State<RegistrationPage> createState() => _RegistrationPageState();
 }
 
-class _CustomerLoginPageState extends State<CustomerLoginPage> {
+class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _signIn() async {
+  Future<void> _signUp() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final AuthResponse response = await Supabase.instance.client.auth.signInWithPassword(
+      final AuthResponse response = await Supabase.instance.client.auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       if (response.user != null) {
-        // Fetch user role after successful login
-        final userRole = await _fetchUserRole(response.user!.id);
+        // After successful Supabase Auth signup, insert user details into 'users' table
+        await Supabase.instance.client.from('users').insert({
+          'id': response.user!.id, // Supabase user ID
+          'name': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text.trim(), // Consider hashing password on backend for security
+          'phone_number': _phoneController.text.trim(),
+          'address': _addressController.text.trim(),
+          'role': widget.registrationRole.toString().split('.').last, // 'admin' or 'customer'
+        });
 
         if (mounted) {
-          if (userRole == UserRole.customer) { // Check specifically for customer role
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PetHomePage(role: userRole!), // Assert non-nullability here
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Access Denied: Not a customer.')),
-            );
-            await Supabase.instance.client.auth.signOut(); // Sign out if not customer
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registration successful!')),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PetHomePage(role: widget.registrationRole),
+            ),
+          );
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login failed. Please check your credentials.')),
+            const SnackBar(content: Text('Registration failed. Please try again.')),
           );
         }
       }
@@ -75,32 +83,13 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
     }
   }
 
-  Future<UserRole?> _fetchUserRole(String userId) async {
-    try {
-      final response = await Supabase.instance.client
-          .from('users') // Use 'users' table based on your schema
-          .select('role') // Assuming you have a 'role' column
-          .eq('id', userId)
-          .single();
-
-      if (response != null && response['role'] != null) {
-        final String roleString = response['role'];
-        if (roleString == 'admin') {
-          return UserRole.admin;
-        } else if (roleString == 'customer') {
-          return UserRole.customer;
-        }
-      }
-    } catch (e) {
-      debugPrint('Error fetching user role: $e');
-    }
-    return null;
-  }
-
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -108,7 +97,7 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customer Login'),
+        title: Text('${widget.registrationRole.toString().split('.').last.toUpperCase()} Registration'),
         backgroundColor: const Color(0xFFB9C57D),
       ),
       body: Center(
@@ -118,16 +107,25 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Customer Login',
+              Text(
+                'Register as ${widget.registrationRole.toString().split('.').last}',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFFB9C57D),
                 ),
               ),
               const SizedBox(height: 40),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 20),
               TextField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -147,9 +145,29 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                 ),
                 obscureText: true,
               ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _addressController,
+                decoration: const InputDecoration(
+                  labelText: 'Address',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.home),
+                ),
+                maxLines: 3,
+              ),
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: _isLoading ? null : _signIn,
+                onPressed: _isLoading ? null : _signUp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.brown[800],
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -159,23 +177,18 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Login as Customer',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                    : Text(
+                        'Register as ${widget.registrationRole.toString().split('.').last}',
+                        style: const TextStyle(fontSize: 18, color: Colors.white),
                       ),
               ),
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const RegistrationPage(registrationRole: UserRole.customer), // Navigate to registration
-                    ),
-                  );
+                  Navigator.pop(context); // Go back to the login page
                 },
                 child: Text(
-                  'Don\'t have an account? Register Here',
+                  'Already have an account? Login',
                   style: TextStyle(color: Colors.brown[600]),
                 ),
               ),
