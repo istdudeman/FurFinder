@@ -1,7 +1,7 @@
 // furfinder/lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../pages/login_page.dart'; // Import the new login page
+import '../pages/login_page.dart'; // Import the new login page (now role selection)
 
 void main() async {
   // Wajib untuk inisialisasi sebelum runApp
@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.brown,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const LoginPage(), // Start with the LoginPage
+      home: const LoginPage(), // Start with the LoginPage (now role selection)
     );
   }
 }
