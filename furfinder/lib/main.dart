@@ -1,15 +1,15 @@
 // furfinder/lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:furfinder/pages/customer_login_page.dart'; // Corrected import path
+import 'package:furfinder/pages/customer_login_page.dart';
+import 'package:furfinder/pages/login_page.dart'; // Make sure this import exists and is correct
 
 void main() async {
-  // Wajib untuk inisialisasi sebelum runApp
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url: 'https://oipfczyfaywounyyrzbm.supabase.co', // Ganti dengan URL dari Supabase project kamu
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pcGZjenlmYXl3b3VueXlyemJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NDE2MjEsImV4cCI6MjA2NjUxNzYyMX0.tirrekFk3Z15NrIMBHyCcA2kaTml_8SXVWconHrDyKo', // Ganti dengan anon key dari Supabase
+    url: 'https://oipfczyfaywounyyrzbm.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pcGZjenlmYXl3b3VueXlyemJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NDE2MjEsImV4cCI6MjA2NjUxNzYyMX0.tirrekFk3Z15NrIMBHyCcA2kaTml_8SXVWconHrDyKo',
   );
 
   runApp(const MyApp());
@@ -28,7 +28,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.brown,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const CustomerLoginPage(), // Start with the CustomerLoginPage directly
+      // Change this line:
+      home: const LoginPage(), // Now starting with the Login Page which has both options
     );
   }
 }
