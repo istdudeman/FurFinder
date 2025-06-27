@@ -4,7 +4,7 @@ import '../models/user_role.dart';
 import '../pages/add_pet_profile_page.dart';
 import '../pages/camera_view_page.dart';
 import '../pages/category_pages.dart';
-import '../pages/role_selection.dart';
+import '../pages/login_page.dart';
 import '../widgets/camera_card.dart';
 import '../widgets/placeholder_card.dart';
 import '../widgets/service_card.dart';
@@ -43,18 +43,16 @@ class _PetHomePageState extends State<PetHomePage> {
       final userId = user.id;
 
       // Ambil data nama user dari tabel `users` (ubah jika nama tabel berbeda)
-      final userRes = await supabase
-          .from('users')
-          .select('name')
-          .eq('id', userId)
-          .single();
+      final userRes =
+          await supabase.from('users').select('name').eq('id', userId).single();
 
       // Ambil data hewan dari tabel `pets`
-      final petRes = await supabase
-          .from('pets')
-          .select('animal_id')
-          .eq('user_id', userId)
-          .maybeSingle();
+      final petRes =
+          await supabase
+              .from('pets')
+              .select('animal_id')
+              .eq('user_id', userId)
+              .maybeSingle();
 
       setState(() {
         userName = userRes['name'] ?? 'User';
@@ -69,9 +67,7 @@ class _PetHomePageState extends State<PetHomePage> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -106,48 +102,71 @@ class _PetHomePageState extends State<PetHomePage> {
                           Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.shopping_basket_outlined, color: Colors.white),
-                                onPressed: currentPetID == null
-                                    ? () => showDialog(
+                                icon: const Icon(
+                                  Icons.shopping_basket_outlined,
+                                  color: Colors.white,
+                                ),
+                                onPressed:
+                                    currentPetID == null
+                                        ? () => showDialog(
                                           context: context,
-                                          builder: (_) => AlertDialog(
-                                            title: const Text('Isi Profil Hewan'),
-                                            content: const Text('Silakan isi data hewan terlebih dahulu.'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context),
-                                                child: const Text('OK'),
+                                          builder:
+                                              (_) => AlertDialog(
+                                                title: const Text(
+                                                  'Isi Profil Hewan',
+                                                ),
+                                                content: const Text(
+                                                  'Silakan isi data hewan terlebih dahulu.',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed:
+                                                        () => Navigator.pop(
+                                                          context,
+                                                        ),
+                                                    child: const Text('OK'),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
                                         )
-                                    : () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => TransactionPage(
-                                              petID: currentPetID!,
+                                        : () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => TransactionPage(
+                                                    petID: currentPetID!,
+                                                  ),
                                             ),
-                                          ),
-                                        );
-                                      },
+                                          );
+                                        },
                                 tooltip: 'New Booking',
                               ),
                               IconButton(
-                                icon: const Icon(Icons.notifications_none, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.notifications_none,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (_) => const ActivityLogPage()),
+                                    MaterialPageRoute(
+                                      builder: (_) => const ActivityLogPage(),
+                                    ),
                                   );
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.settings, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.settings,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                                    MaterialPageRoute(
+                                      builder: (_) => const SettingsPage(),
+                                    ),
                                   );
                                 },
                               ),
@@ -158,7 +177,9 @@ class _PetHomePageState extends State<PetHomePage> {
                             onPressed: () {
                               Navigator.pushReplacement(
                                 context,
-                                MaterialPageRoute(builder: (_) => const RoleSelectionPage()),
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginPage(),
+                                ),
                               );
                             },
                           ),
@@ -205,7 +226,9 @@ class _PetHomePageState extends State<PetHomePage> {
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.brown[800],
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -220,7 +243,10 @@ class _PetHomePageState extends State<PetHomePage> {
                               },
                               child: const Text(
                                 "Add Pet Profile",
-                                style: TextStyle(fontSize: 16, color: Colors.white),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -233,7 +259,9 @@ class _PetHomePageState extends State<PetHomePage> {
                   child: Container(
                     decoration: const BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.only(topLeft: Radius.circular(30)),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                      ),
                     ),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
@@ -253,7 +281,8 @@ class _PetHomePageState extends State<PetHomePage> {
                                 color: const Color(0xFFD9D1BD),
                                 role: widget.role,
                                 petID: currentPetID ?? '',
-                                serviceID: "1b7790d8-987d-41f9-bb53-5a078c8be1de",
+                                serviceID:
+                                    "1b7790d8-987d-41f9-bb53-5a078c8be1de",
                               ),
                               ServiceCard(
                                 title: "Nail\nTrimmer",
@@ -261,7 +290,8 @@ class _PetHomePageState extends State<PetHomePage> {
                                 color: const Color(0xFFD6A55D),
                                 role: widget.role,
                                 petID: currentPetID ?? '',
-                                serviceID: "e2c3b5a1-4f89-4b1a-9c2e-7d6f5c8a4b3d",
+                                serviceID:
+                                    "e2c3b5a1-4f89-4b1a-9c2e-7d6f5c8a4b3d",
                               ),
                               ServiceCard(
                                 title: "Hair\ncut",
@@ -269,7 +299,8 @@ class _PetHomePageState extends State<PetHomePage> {
                                 color: const Color(0xFF78824B),
                                 role: widget.role,
                                 petID: currentPetID ?? '',
-                                serviceID: "f4a5c6b2-8e9d-4f7c-a1b3-6d5e4f3a2b1c",
+                                serviceID:
+                                    "f4a5c6b2-8e9d-4f7c-a1b3-6d5e4f3a2b1c",
                               ),
                               const PlaceholderCard(emoji: '🐕'),
                               const PlaceholderCard(emoji: '🐈'),
@@ -279,7 +310,10 @@ class _PetHomePageState extends State<PetHomePage> {
                           const SizedBox(height: 30),
                           const Text(
                             "Live Cameras",
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           SingleChildScrollView(
@@ -293,10 +327,11 @@ class _PetHomePageState extends State<PetHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => CameraViewPage(
-                                          cameraTitle: "Cage Camera",
-                                          petID: currentPetID ?? '',
-                                        ),
+                                        builder:
+                                            (_) => CameraViewPage(
+                                              cameraTitle: "Cage Camera",
+                                              petID: currentPetID ?? '',
+                                            ),
                                       ),
                                     );
                                   },
@@ -309,10 +344,11 @@ class _PetHomePageState extends State<PetHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => CameraViewPage(
-                                          cameraTitle: "Playground 1",
-                                          petID: currentPetID ?? '',
-                                        ),
+                                        builder:
+                                            (_) => CameraViewPage(
+                                              cameraTitle: "Playground 1",
+                                              petID: currentPetID ?? '',
+                                            ),
                                       ),
                                     );
                                   },
@@ -325,10 +361,11 @@ class _PetHomePageState extends State<PetHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => CameraViewPage(
-                                          cameraTitle: "Playground 2",
-                                          petID: currentPetID ?? '',
-                                        ),
+                                        builder:
+                                            (_) => CameraViewPage(
+                                              cameraTitle: "Playground 2",
+                                              petID: currentPetID ?? '',
+                                            ),
                                       ),
                                     );
                                   },
