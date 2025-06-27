@@ -11,6 +11,7 @@ import '../widgets/service_card.dart';
 import '../pages/activity_log_page.dart';
 import 'transactions_page.dart';
 import 'settings_page.dart';
+import '../pages/camera_playground.dart';
 
 class PetHomePage extends StatefulWidget {
   final UserRole role;
@@ -345,9 +346,8 @@ class _PetHomePageState extends State<PetHomePage> {
                                       context,
                                       MaterialPageRoute(
                                         builder:
-                                            (_) => CameraViewPage(
+                                            (_) => CameraPlaygroundPage(
                                               cameraTitle: "Playground 1",
-                                              petID: currentPetID ?? '',
                                             ),
                                       ),
                                     );

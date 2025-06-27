@@ -20,3 +20,19 @@ Future<String?> fetchCameraStreamUrl(String animalId) async {
     return null;
   }
 }
+
+Future<bool> addCameraPlayground() async {
+  final supabase = Supabase.instance.client;
+
+  try {
+    final response = await supabase.from('camera').insert({
+      'url': 'http://192.168.18.147/stream',
+    });
+
+    print("✅ Camera playground added.");
+    return true;
+  } catch (e) {
+    print("❌ Error in addCameraPlayground: $e");
+    return false;
+  }
+}
