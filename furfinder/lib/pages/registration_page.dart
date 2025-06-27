@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_role.dart';
-import 'pet_homepage.dart';
+import 'customer_login_page.dart'; // Import the customer login page instead of login_page.dart
 
 class RegistrationPage extends StatefulWidget {
   final UserRole registrationRole;
@@ -33,8 +33,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
       );
 
       if (response.user != null) {
-        // After successful Supabase Auth signup, insert user details into 'users' table
-        await Supabase.instance.client.from('users').insert({
+        // After successful Supabase Auth signup, upsert user details into 'users' table
+        // Use .upsert() instead of .insert() to handle potential existing entries
+        // based on the primary key (id).
+        await Supabase.instance.client.from('users').upsert({
           'id': response.user!.id, // Supabase user ID
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
@@ -46,12 +48,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful!')),
+            const SnackBar(content: Text('Registration successful! Please log in.')),
           );
+          // Redirect to the customer login page after successful registration
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => PetHomePage(role: widget.registrationRole),
+              builder: (_) => const CustomerLoginPage(), // Redirect to CustomerLoginPage
             ),
           );
         }
@@ -170,7 +173,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 onPressed: _isLoading ? null : _signUp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.brown[800],
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -185,7 +188,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // Go back to the login page
+                  Navigator.pop(context); // Go back to the previous login page
                 },
                 child: Text(
                   'Already have an account? Login',
