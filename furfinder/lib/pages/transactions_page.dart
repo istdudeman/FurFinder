@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
+import '../api/transaction_api.dart';
 
 class TransactionPage extends StatefulWidget {
   final String petID;
-  final String? serviceID; // Make serviceID optional
+  final String? serviceID;
 
-  const TransactionPage({super.key, required this.petID, this.serviceID}); // Update constructor
+  const TransactionPage({super.key, required this.petID, this.serviceID});
 
   @override
   State<TransactionPage> createState() => _TransactionPageState();
@@ -30,26 +28,26 @@ class _TransactionPageState extends State<TransactionPage> {
 
   bool _isLoading = true;
 
-  // IMPORTANT: Replace with your actual ngrok URL
-  final String ngrokUrl = "https://c34b-182-253-50-98.ngrok-free.app";
-
   @override
   void initState() {
     super.initState();
-    _selectedServiceId = widget.serviceID; // Handle optional serviceID
+    _selectedServiceId = widget.serviceID;
     _fetchInitialData();
   }
 
   Future<void> _fetchInitialData() async {
     try {
-      await Future.wait([
-        _fetchPetDetails(),
-        _fetchServices(),
-        _fetchCages(),
-      ]);
+      final pet = await fetchPetDetails(widget.petID);
+      final services = await fetchServices();
+      final cages = await fetchCages();
+
+      setState(() {
+        _petDetails = pet;
+        _services = services;
+        _cages = cages;
+      });
       _calculatePrice();
     } catch (e) {
-      print("Error fetching initial data: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error loading data: $e")),
@@ -64,63 +62,28 @@ class _TransactionPageState extends State<TransactionPage> {
     }
   }
 
-  Future<void> _fetchPetDetails() async {
-    final response = await http.get(Uri.parse('$ngrokUrl/api/pets/${widget.petID}'));
-    print("Pet ID yang dikirim: ${widget.petID}");
-    if (response.statusCode == 200) {
-      _petDetails = json.decode(response.body);
-    } else {
-      throw Exception('Failed to load pet details');
-    }
-  }
-
-  Future<void> _fetchServices() async {
-    final response = await http.get(Uri.parse('$ngrokUrl/api/services/list'));
-    if (response.statusCode == 200) {
-      _services = json.decode(response.body);
-    } else {
-      throw Exception('Failed to load services');
-    }
-  }
-
-  Future<void> _fetchCages() async {
-    final response = await http.get(Uri.parse('$ngrokUrl/api/cage/list'));
-    print("Cages JSON: ${response.body}");
-    if (response.statusCode == 200) {
-      _cages = json.decode(response.body);
-    } else {
-      throw Exception('Failed to load cages');
-    }
-  }
-
   void _calculatePrice() {
     if (_startDate == null || _endDate == null || _selectedCageId == null || _selectedServiceId == null) {
       return;
     }
 
     final days = _endDate!.difference(_startDate!).inDays;
-    print("Days difference: $days");
     if (days > 0) {
       final cage = _cages.firstWhere((c) => c['cage_id'] == _selectedCageId);
       final service = _services.firstWhere((s) => s['services_id'] == _selectedServiceId);
       final cagePricePerDay = (cage['price_per_day'] as num).toDouble();
       final servicePrice = (service['price'] as num).toDouble();
 
-      print("Cage Price Per Day: $cagePricePerDay");
-      print("Service Price: $servicePrice");
-      print("Days: $days");
-
-
       setState(() {
         _totalPrice = (days * cagePricePerDay) + servicePrice;
       });
     } else {
-       setState(() {
+      setState(() {
         _totalPrice = 0;
       });
     }
   }
-  
+
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -133,7 +96,7 @@ class _TransactionPageState extends State<TransactionPage> {
         if (isStartDate) {
           _startDate = picked;
           _startDateController.text = DateFormat('yyyy-MM-dd').format(picked);
-          if(_endDate != null && _endDate!.isBefore(_startDate!)){
+          if (_endDate != null && _endDate!.isBefore(_startDate!)) {
             _endDate = null;
             _endDateController.text = "";
           }
@@ -147,6 +110,8 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   Future<void> _confirmBooking() async {
+    const userId = 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d';
+
     if (_startDate == null || _endDate == null || _selectedCageId == null || _selectedServiceId == null || _totalPrice <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields and ensure the dates are correct.")),
@@ -154,34 +119,49 @@ class _TransactionPageState extends State<TransactionPage> {
       return;
     }
 
-    final url = Uri.parse('$ngrokUrl/api/booking/addbookings');
-    final uuid = Uuid();
-    final bookingId = uuid.v4(); // generate random UUID
+    final cageStatus = await checkCageStatus(_selectedCageId!);
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'booking_id': bookingId,
-        'user_id': 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d', // Replace with actual user ID
-        'start_date': DateFormat('yyyy-MM-dd').format(_startDate!),
-        'end_date': DateFormat('yyyy-MM-dd').format(_endDate!),
-        'status': 'confirmed',
-        'total_price': _totalPrice,
-        'animal_id': widget.petID,
-        'cage_id': _selectedCageId,
-        'services_id': _selectedServiceId,
-      }),
+    if (cageStatus == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cage not found.")),
+      );
+      return;
+    }
+
+    if (cageStatus == 'occupied') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cage is already occupied.")),
+      );
+      return;
+    }
+
+    final success = await insertBooking(
+      petId: widget.petID,
+      cageId: _selectedCageId!,
+      serviceId: _selectedServiceId!,
+      startDate: _startDate!,
+      endDate: _endDate!,
+      totalPrice: _totalPrice,
+      userId: userId,
     );
 
-    if (response.statusCode == 201) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Booking successful!")),
-      );
-      Navigator.of(context).pop();
+    if (success) {
+      final updateSuccess = await updateCageStatus(_selectedCageId!, widget.petID);
+
+      if (updateSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Booking successful!")),
+        );
+        await Future.delayed(const Duration(seconds: 1));
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Booking saved, but failed to update cage.")),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Booking failed: ${response.body}")),
+        const SnackBar(content: Text("Booking failed.")),
       );
     }
   }

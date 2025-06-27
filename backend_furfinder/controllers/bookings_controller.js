@@ -1,4 +1,4 @@
-const pool = require('../db');
+const pool = require('../supabase');
 const jwt = require('jsonwebtoken');
 const { message } = require('statuses');
 

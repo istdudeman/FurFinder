@@ -1,40 +1,32 @@
 import 'package:flutter/material.dart';
-// Import the first page your app should show
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../pages/role_selection.dart';
 
-// The main entry point of the application.
-void main() {
-  // Tells Flutter to run the widget defined in MyApp.
+void main() async {
+  // Wajib untuk inisialisasi sebelum runApp
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://oipfczyfaywounyyrzbm.supabase.co', // Ganti dengan URL dari Supabase project kamu
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pcGZjenlmYXl3b3VueXlyemJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NDE2MjEsImV4cCI6MjA2NjUxNzYyMX0.tirrekFk3Z15NrIMBHyCcA2kaTml_8SXVWconHrDyKo', // Ganti dengan anon key dari Supabase
+  );
+
   runApp(const MyApp());
 }
 
-// This is the root widget of your application.
 class MyApp extends StatelessWidget {
-  // Constructor for the MyApp widget.
   const MyApp({super.key});
 
-  // The build method describes how to display the widget.
   @override
   Widget build(BuildContext context) {
-    // MaterialApp is a convenience widget that wraps a number of
-    // widgets that are commonly required for Material Design applications.
     return MaterialApp(
-      // The title of your application, used by the device's task switcher.
       title: 'Fur Finder',
-
-      // Hides the "debug" banner in the top-right corner.
       debugShowCheckedModeBanner: false,
-
-      // Defines the overall theme for your application, including the font.
       theme: ThemeData(
-        fontFamily: 'Sans', // Sets the default font family.
-        // You can add more global theme settings here, like primaryColor, accentColor, etc.
-        primarySwatch: Colors.brown, // Example: Set a primary color
+        fontFamily: 'Sans',
+        primarySwatch: Colors.brown,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-
-      // Sets the default starting page (widget) for the application.
-      // In this case, it's the page where the user selects their role.
       home: const RoleSelectionPage(),
     );
   }

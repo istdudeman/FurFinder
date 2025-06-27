@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:furfinder/api/pet_api.dart';
+// import 'package:http/http.dart' as http;
+// import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddPetProfilePage extends StatefulWidget {
   const AddPetProfilePage({super.key});
@@ -15,61 +17,34 @@ class _AddPetProfilePageState extends State<AddPetProfilePage> {
   final TextEditingController ageController = TextEditingController();
 
   Future<void> addPetProfile(String name, String breed, int age) async {
-    // IMPORTANT: This ngrok URL is temporary and will change.
-    // Replace with your actual backend URL or use 10.0.2.2 for Android emulator if backend runs locally.
-    final url = Uri.parse('https://c34b-182-253-50-98.ngrok-free.app/api/pets/add');
+    final userId = 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d'; // Ganti ke dinamis nanti
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'name': name,
-          'breed': breed,
-          'age': age,
-        }),
-      );
+    final result = await addPetData(
+      userId: userId,
+      name: name,
+      breed: breed,
+      age: age,
+    );
 
-      if (response.statusCode == 201) {
-        final responseData = json.decode(response.body);
-        print('Hewan peliharaan berhasil ditambahkan: ${responseData['message']}');
-
-        // Check if the widget is still mounted before showing the dialog
-        if (!mounted) return;
-
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            content: const Text(
-              "SUCCESS",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+    if (result == null) {
+      // Sukses
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          content: const Text("SUCCESS", textAlign: TextAlign.center),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop(); // Close the dialog
-                  Navigator.of(context).pop(); // Go back from AddPetProfilePage
-                },
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-      } else {
-        print('Gagal menambahkan hewan peliharaan: ${response.body}');
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Gagal menambahkan hewan peliharaan")),
-        );
-      }
-    } catch (error) {
-       print('Error during API call: $error');
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Terjadi kesalahan jaringan.")),
-        );
+          ],
+        ),
+      );
+    } else {
+      // Gagal
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result)),
+      );
     }
   }
 

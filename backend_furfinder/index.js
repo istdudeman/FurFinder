@@ -1,5 +1,3 @@
-// backend_furfinder/index.js
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const ngrok = require('ngrok');
@@ -12,9 +10,7 @@ const servicesrouter = require('./routes/services_routes');
 const cagerouter = require('./routes/cage_routes');
 const bookingsrouter = require('./routes/bookings_router');
 const cameraRouter = require('./routes/camera_routes');
-const settingsRouter = require('./routes/settings_routes');
-const pendingPetsRouter = require('./routes/pending_pets_routes'); // Import the new pending pets router
-
+const settingsRouter = require('./routes/settings_routes'); // Import the new settings router
 
 app.use(bodyParser.json());
 
@@ -24,8 +20,7 @@ app.use('/api/services', servicesrouter);
 app.use('/api/cage', cagerouter);
 app.use('/api/booking', bookingsrouter);
 app.use('/api/camera', cameraRouter);
-app.use('/api/settings', settingsRouter);
-app.use('/api/pending-pets', pendingPetsRouter); // Use the new pending pets router
+app.use('/api/settings', settingsRouter); // Use the new settings router
 
 app.listen(3000, '0.0.0.0', async () => {
   console.log('berhasil jalan')

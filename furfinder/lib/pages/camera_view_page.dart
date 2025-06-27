@@ -1,74 +1,66 @@
-  import 'package:flutter/material.dart';
-  import 'package:http/http.dart' as http;
-  import 'dart:convert';
-  import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import '../api/camera_api.dart'; // Import file API baru
 
-  class CameraViewPage extends StatefulWidget {
-    final String cameraTitle;
-    final String petID;
+class CameraViewPage extends StatefulWidget {
+  final String cameraTitle;
+  final String petID;
 
-    const CameraViewPage({
-      super.key,
-      required this.cameraTitle,
-      required this.petID,
-    });
+  const CameraViewPage({
+    super.key,
+    required this.cameraTitle,
+    required this.petID,
+  });
 
-    @override
-    State<CameraViewPage> createState() => _CameraViewPageState();
+  @override
+  State<CameraViewPage> createState() => _CameraViewPageState();
+}
+
+class _CameraViewPageState extends State<CameraViewPage> {
+  String? streamUrl;
+  bool isLoading = true;
+  bool hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchStreamUrl();
   }
 
-  class _CameraViewPageState extends State<CameraViewPage> {
-    String? streamUrl;
-    bool isLoading = true;
-    bool hasError = false;
+  Future<void> fetchStreamUrl() async {
+    final url = await fetchCameraStreamUrl(widget.petID);
 
-    @override
-    void initState() {
-      super.initState();
-      fetchStreamUrl();
+    if (url != null) {
+      setState(() {
+        streamUrl = url;
+        isLoading = false;
+      });
+      debugPrint("✅ Stream URL: $streamUrl");
+    } else {
+      setState(() {
+        hasError = true;
+        isLoading = false;
+      });
     }
+  }
 
-    Future<void> fetchStreamUrl() async {
-      try {
-        final response = await http.get(
-          Uri.parse('https://c34b-182-253-50-98.ngrok-free.app/api/camera/${widget.petID}'),
-        );
-
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          setState(() {
-            streamUrl = data['url'];
-            isLoading = false;
-          });
-        } else {
-          throw Exception('Failed to load camera data');
-        }
-        debugPrint("✅ Stream URL from backend: $streamUrl");
-      } catch (e) {
-        setState(() {
-          hasError = true;
-          isLoading = false;
-        });
-      }
-    }
-
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(title: Text(widget.cameraTitle)),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : hasError || streamUrl == null
-                ? Center(child: Text('Failed to load camera stream, stream URL : $streamUrl'))
-                : Center(
-                    child: Mjpeg(
-                      isLive: true,
-                      stream: streamUrl!,
-                      error: (context, error, stack) {
-                        return const Text('Error loading stream');
-                      },
-                    ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.cameraTitle)),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : hasError || streamUrl == null
+              ? Center(child: Text('Failed to load camera stream.\nURL: $streamUrl'))
+              : Center(
+                  child: Mjpeg(
+                    isLive: true,
+                    stream: streamUrl!,
+                    error: (context, error, stack) {
+                      return const Text('Error loading stream');
+                    },
                   ),
-      );
-    }
+                ),
+    );
   }
+}

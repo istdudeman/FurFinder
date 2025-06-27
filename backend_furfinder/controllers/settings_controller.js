@@ -1,4 +1,4 @@
-const pool = require('../db');
+const pool = require('../supabase');
 
 // ✅ Fungsi untuk tambah beacon_id
 exports.addBeaconId = async (req, res) => {

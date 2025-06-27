@@ -1,6 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../api/pet_api.dart'; // Tambahkan ini
 
 class ProfileCard extends StatefulWidget {
   final String petID;
@@ -18,26 +17,21 @@ class _ProfileCardState extends State<ProfileCard> {
   @override
   void initState() {
     super.initState();
-    fetchPetData();
+    loadData();
   }
 
-  Future<void> fetchPetData() async {
-    final url = Uri.parse(
-        'https://c34b-182-253-50-98.ngrok-free.app/api/pets/${widget.petID}');
-    print("Pet ID yang dikirim: ${widget.petID}");
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        setState(() {
-          petData = jsonDecode(response.body);
-          isLoading = false;
-        });
-      } else {
-        print("Gagal mendapatkan data hewan: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error fetching data pets: $e");
+  Future<void> loadData() async {
+    final data = await fetchPetProfileData(widget.petID);
+
+    if (data == null) {
+      print("Data tidak ditemukan atau error.");
+      return;
     }
+
+    setState(() {
+      petData = data;
+      isLoading = false;
+    });
   }
 
   @override
@@ -83,7 +77,7 @@ class _ProfileCardState extends State<ProfileCard> {
           Column(
             children: [
               Text(
-                petData!['day']?.toString() ?? "0",
+                petData!['day'].toString(),
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               Text(
