@@ -1,6 +1,22 @@
-// pages/activity_log_page.dart
+// furfinder/lib/pages/activity_log_page.dart
 import 'package:flutter/material.dart';
-import '../models/activity_logs.dart'; // Adjust import path as needed
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
+
+// Assuming you still use this model
+class ActivityLogEntry {
+  final String time;
+  final String description;
+  final Color dotColor;
+  final String petName; // Now this can be dynamic
+
+  ActivityLogEntry({
+    required this.time,
+    required this.description,
+    required this.dotColor,
+    required this.petName,
+  });
+}
 
 class ActivityLogPage extends StatefulWidget {
   const ActivityLogPage({super.key});
@@ -10,21 +26,129 @@ class ActivityLogPage extends StatefulWidget {
 }
 
 class _ActivityLogPageState extends State<ActivityLogPage> {
-  // Sample data - replace with your actual data source
-  final List<ActivityLogEntry> _activityLogs = [
-    ActivityLogEntry(time: "07:44", description: "Keluar Kandang", dotColor: Colors.redAccent.shade100),
-    ActivityLogEntry(time: "03:05", description: "Masuk Kandang", dotColor: Colors.greenAccent.shade200),
-    ActivityLogEntry(time: "02:00", description: "sedang Haircut", dotColor: Colors.brown.shade300),
-    ActivityLogEntry(time: "12:18", description: "Keluar Kandang", dotColor: Colors.redAccent.shade100),
-    ActivityLogEntry(time: "21:30", description: "Masuk Kandang", dotColor: Colors.greenAccent.shade200),
-    ActivityLogEntry(time: "21:20", description: "sedang NailTrim", dotColor: Colors.orange.shade300),
-    ActivityLogEntry(time: "20:30", description: "Keluar Kandang", dotColor: Colors.redAccent.shade100),
-    ActivityLogEntry(time: "19:45", description: "Masuk Kandang", dotColor: Colors.greenAccent.shade200),
-    ActivityLogEntry(time: "17:57", description: "sedang Bathing", dotColor: Colors.blueGrey.shade200),
-  ];
+  List<ActivityLogEntry> _activityLogs = [];
+  bool _isLoading = true;
+  String _petName = "Loading..."; // Placeholder for dynamic pet name
+  String _petAddress = "Loading..."; // Placeholder for dynamic address
 
-  final String _petName = "Aasyifa";
-  final String _petAddress = "Alamat Toko Peliharaan"; // Example address
+  @override
+  void initState() {
+    super.initState();
+    _fetchActivityLogs();
+  }
+
+  Future<void> _fetchActivityLogs() async {
+    try {
+      final supabase = Supabase.instance.client;
+      // Get the current authenticated user's ID
+      final currentUserId = supabase.auth.currentUser?.id;
+
+      if (currentUserId == null) {
+        // Handle case where user is not logged in
+        debugPrint('User not logged in. Cannot fetch activity logs.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please log in to view activity logs.')),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // Fetch user profile to get pet name and address
+      // --- CHANGE IS HERE: Use .maybeSingle() instead of .single() ---
+      final userProfile = await supabase
+          .from('users') // Assuming 'users' table holds user profiles
+          .select('name, address, role') // Also fetch role for potential future use
+          .eq('id', currentUserId)
+          .maybeSingle(); // Changed to maybeSingle()
+
+      // Set default values if user profile is not found
+      String fetchedUserName = "Unknown User";
+      String fetchedUserAddress = "Unknown Address";
+      String userRole = "customer"; // Default to customer if not found
+
+      if (userProfile != null) {
+        fetchedUserName = userProfile['name'] as String? ?? "Unknown User";
+        fetchedUserAddress = userProfile['address'] as String? ?? "Unknown Address";
+        userRole = userProfile['role'] as String? ?? "customer";
+      }
+
+      // Determine the animal_id to query based on user role
+      // Admins see all logs, customers see only their pet's logs
+      // This is primarily for the Flutter client-side filtering IF RLS is not fully trusted/understood.
+      // With proper RLS, the 'select()' query will automatically be filtered.
+      // However, for fetching the correct 'pet_name' for display, we need to know what to display.
+      
+      // Let's adjust the query to fetch relevant logs based on RLS (which handles filtering)
+      // and ensure 'pet_name' is correctly displayed.
+      
+      final response = await supabase
+          .from('activity_logs')
+          .select('time_log, description, pet_name, animal_id') // Ensure animal_id is selected if used for display
+          .order('time_log', ascending: false)
+          .limit(10);
+
+      final fetchedLogs = response.map<ActivityLogEntry>((row) {
+        final DateTime logTime = DateTime.parse(row['time_log']);
+        // Use the pet_name from the activity log row, or fallback to the fetched user name
+        // (though ideally pet_name in log is specific to the pet).
+        final String displayPetName = row['pet_name'] as String? ?? fetchedUserName;
+
+        return ActivityLogEntry(
+          time: DateFormat('HH:mm').format(logTime),
+          description: row['description'] as String,
+          dotColor: _getColorFromDescription(row['description'] as String),
+          petName: displayPetName,
+        );
+      }).toList();
+
+      setState(() {
+        _activityLogs = fetchedLogs;
+        _petName = fetchedUserName;
+        _petAddress = fetchedUserAddress;
+        _isLoading = false;
+      });
+    } on PostgrestException catch (e) {
+        debugPrint('Postgrest Error fetching activity logs or user profile: ${e.message}');
+        if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to load activity log (DB error): ${e.message}')),
+            );
+            setState(() {
+                _isLoading = false;
+            });
+        }
+    } catch (e) {
+      debugPrint('General Error fetching activity logs or user profile: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load activity log: $e')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Helper function to assign colors based on activity description
+  Color _getColorFromDescription(String description) {
+    if (description.contains("Keluar Kandang")) {
+      return Colors.redAccent.shade100;
+    } else if (description.contains("Masuk Kandang")) {
+      return Colors.greenAccent.shade200;
+    } else if (description.contains("Haircut")) {
+      return Colors.brown.shade300;
+    } else if (description.contains("NailTrim")) {
+      return Colors.orange.shade300;
+    } else if (description.contains("Bathing")) {
+      return Colors.blueGrey.shade200;
+    }
+    return Colors.grey.shade400; // Default color
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,15 +220,19 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
                   color: Colors.white, // Background color for the log area
                   borderRadius: BorderRadius.circular(20.0),
                 ),
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 8.0),
-                  itemCount: _activityLogs.length,
-                  itemBuilder: (context, index) {
-                    final activity = _activityLogs[index];
-                    final bool isLastItem = index == _activityLogs.length - 1;
-                    return _buildActivityItem(activity, isLastItem);
-                  },
-                ),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator(color: Colors.brown))
+                    : _activityLogs.isEmpty
+                        ? const Center(child: Text('No activity logs found.', style: TextStyle(color: Colors.grey)))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 8.0),
+                            itemCount: _activityLogs.length,
+                            itemBuilder: (context, index) {
+                              final activity = _activityLogs[index];
+                              final bool isLastItem = index == _activityLogs.length - 1;
+                              return _buildActivityItem(activity, isLastItem);
+                            },
+                          ),
               ),
             ),
             const SizedBox(height: 20), // Bottom padding
