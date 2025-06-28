@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:furfinder/api/pet_api.dart'; // Reusing existing pet_api for pet profile
+import 'package:furfinder/api/transaction_api.dart'; // Import transaction_api for payment functions
+import 'package:intl/intl.dart'; // For date formatting
 
 class CustomerProfilePage extends StatefulWidget {
   const CustomerProfilePage({super.key});
@@ -14,6 +16,7 @@ class CustomerProfilePage extends StatefulWidget {
 class _CustomerProfilePageState extends State<CustomerProfilePage> {
   Map<String, dynamic>? _customerData;
   List<Map<String, dynamic>> _petsData = []; // Changed to a list
+  List<Map<String, dynamic>> _pendingBookings = []; // New list for pending bookings
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -21,6 +24,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
   void initState() {
     super.initState();
     _fetchProfileData();
+    _fetchPendingBookings(); // Fetch pending bookings on init
   }
 
   Future<void> _fetchProfileData() async {
@@ -73,6 +77,85 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
     }
   }
 
+  Future<void> _fetchPendingBookings() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+
+      if (user == null) return;
+
+      // Fetch bookings with 'pending_payment' status for the current user
+      final response = await supabase
+          .from('bookings')
+          .select('booking_id, start_date, end_date, total_price, status, pets(name)') // Join with pets table to get pet name
+          .eq('user_id', user.id)
+          .eq('status', 'pending_payment'); // Filter for pending payments
+
+      setState(() {
+        _pendingBookings = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      debugPrint('Error fetching pending bookings: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching pending payments: $e')),
+        );
+      }
+    }
+  }
+
+  // Function to handle payment confirmation
+  Future<void> _handleConfirmPayment(String bookingId) async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to confirm payment.')),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isLoading = true; // Show loading indicator during confirmation
+    });
+
+    try {
+      // Call the API function to confirm payment
+      final success = await confirmPaymentMade(bookingId, user.id); //
+
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Payment confirmation sent! Admin will verify.')),
+          );
+          _fetchPendingBookings(); // Refresh the list to remove confirmed booking
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to send payment confirmation. Please try again.')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error confirming payment in UI: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,14 +171,14 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty && _customerData == null && _petsData.isEmpty
+          : _errorMessage.isNotEmpty && _customerData == null && _petsData.isEmpty && _pendingBookings.isEmpty
               ? Center(child: Text(_errorMessage, textAlign: TextAlign.center))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Customer Biodata Section (remains largely the same)
+                      // Customer Biodata Section
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -119,10 +202,11 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                         ),
                       ),
 
-                      // Pet Biodata Section (modified to display multiple pets)
+                      // Pet Biodata Section
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        margin: const EdgeInsets.only(bottom: 20),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
@@ -154,9 +238,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20), // Spacer
-
-                      // Payment Options Section (remains the same)
+                      // Manual Payment Instructions Section
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -175,33 +257,41 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                               _buildProfileRow('Account Number', '1234 5678 9012 3456'),
                               const SizedBox(height: 10),
                               const Text(
-                                'Please make a bank transfer to the account above. Once transferred, click the "Confirm Payment" button.',
+                                'Please make a bank transfer to the account above. Once transferred, select the booking below and click "Confirm Payment".',
                                 style: TextStyle(fontSize: 14, color: Colors.grey),
                               ),
                               const SizedBox(height: 20),
-                              Center(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    // In a real application, this would trigger a notification
-                                    // to the admin for manual verification.
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Payment confirmation sent! Admin will verify.')),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-                                  label: const Text(
-                                    'Confirm Payment',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.brown[800],
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
+
+                              // List of pending payments
+                              if (_pendingBookings.isNotEmpty) ...[
+                                const Text(
+                                  'Pending Payments:',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                 ),
-                              ),
+                                const SizedBox(height: 10),
+                                ..._pendingBookings.map((booking) {
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(vertical: 5),
+                                    child: ListTile(
+                                      title: Text('Booking for ${booking['pets']['name'] ?? 'Unknown Pet'}'),
+                                      subtitle: Text(
+                                          'Total: \$${(booking['total_price'] as num).toStringAsFixed(2)} '
+                                          '(${DateFormat('yyyy-MM-dd').format(DateTime.parse(booking['start_date']))} - '
+                                          '${DateFormat('yyyy-MM-dd').format(DateTime.parse(booking['end_date']))})'),
+                                      trailing: ElevatedButton(
+                                        onPressed: _isLoading ? null : () => _handleConfirmPayment(booking['booking_id']),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.brown[800],
+                                        ),
+                                        child: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Confirm Payment', style: TextStyle(color: Colors.white)),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ] else if (!_isLoading) ...[
+                                const Text('No pending payments.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                              ],
+                              const SizedBox(height: 20),
                             ],
                           ),
                         ),

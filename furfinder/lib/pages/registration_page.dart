@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_role.dart';
-import 'customer_login_page.dart'; // Import the customer login page instead of login_page.dart
+import 'customer_login_page.dart'; // Make sure this imports the *NEW* customer_login_page.dart
 
 class RegistrationPage extends StatefulWidget {
   final UserRole registrationRole;
@@ -54,7 +54,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => const CustomerLoginPage(), // Redirect to CustomerLoginPage
+              builder: (_) => const CustomerLoginPage(), // Redirect to the *NEW* CustomerLoginPage
             ),
           );
         }

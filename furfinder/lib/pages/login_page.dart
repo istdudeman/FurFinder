@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_role.dart';
 import 'pet_homepage.dart';
-import 'admin_login_page.dart'; // New import
-import 'customer_login_page.dart'; // New import
+import 'admin_login_page.dart'; // Existing import
+import 'customer_login_page.dart'; // Make sure this import is correct and points to the *new* file
 
 class LoginPage extends StatelessWidget { // Changed to StatelessWidget
   const LoginPage({super.key});
@@ -49,11 +49,12 @@ class LoginPage extends StatelessWidget { // Changed to StatelessWidget
                 ),
               ),
               const SizedBox(height: 20),
+              // THIS IS THE MODIFIED BUTTON
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const CustomerLoginPage()), // Navigate to Customer Login
+                    MaterialPageRoute(builder: (_) => const CustomerLoginPage()), // Navigate to the *NEW* Customer Login
                   );
                 },
                 style: ElevatedButton.styleFrom(
