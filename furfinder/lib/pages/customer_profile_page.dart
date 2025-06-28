@@ -50,12 +50,12 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
       }
 
       // Fetch pet biodata
-      // Assuming a user can have one pet for simplicity, get the first one.
+      // Using .limit(1) to get only one pet's ID and details, as the current UI displays a single pet profile.
       final petResponse = await supabase
           .from('pets')
           .select('animal_id, name, breed, age')
           .eq('user_id', user.id)
-          .limit(1)
+          .limit(1) // Ensure only one pet is fetched, even if the user has multiple
           .maybeSingle();
 
       if (petResponse != null) {
@@ -66,11 +66,13 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
 
     } catch (e) {
       _errorMessage = 'Error fetching data: $e';
-      debugPrint('Error in _fetchProfileData: $e');
+      debugPrint('Error in _fetchProfileData (CustomerProfilePage): $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) { // Ensure widget is still mounted before calling setState
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -144,6 +146,59 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                                       ],
                                     )
                                   : const Text('No pet registered yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 20), // Spacer
+
+                      // Payment Options Section
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Manual Payment Instructions',
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.brown),
+                              ),
+                              const Divider(),
+                              _buildProfileRow('Bank Name', 'Example Bank'),
+                              _buildProfileRow('Account Name', 'FurFinder Pet Services'),
+                              _buildProfileRow('Account Number', '1234 5678 9012 3456'),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'Please make a bank transfer to the account above. Once transferred, click the "Confirm Payment" button.',
+                                style: TextStyle(fontSize: 14, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 20),
+                              Center(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    // In a real application, this would trigger a notification
+                                    // to the admin for manual verification.
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Payment confirmation sent! Admin will verify.')),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                                  label: const Text(
+                                    'Confirm Payment',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.brown[800],
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),

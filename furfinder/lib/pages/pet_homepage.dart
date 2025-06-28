@@ -34,35 +34,59 @@ class _PetHomePageState extends State<PetHomePage> {
   @override
   void initState() {
     super.initState();
-    fetchUserData();
+    _fetchUserData();
   }
 
-  Future<void> fetchUserData() async {
+  Future<void> _fetchUserData() async {
     try {
       final user = supabase.auth.currentUser;
-      if (user == null) return;
+      if (user == null) {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
+        return;
+      }
 
       final userId = user.id;
+      debugPrint('Fetching user data for userId: $userId');
 
-      // Ambil data nama user dari tabel `users` (ubah jika nama tabel berbeda)
-      final userRes =
-          await supabase.from('users').select('name').eq('id', userId).single();
+      // Ambil data nama user dari tabel `users`
+      // This query assumes 'id' in 'users' is unique, which it should be as a primary key.
+      final userRes = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', userId)
+          .maybeSingle(); // Kept maybeSingle() as 'id' should be unique.
 
       // Ambil data hewan dari tabel `pets`
-      final petRes =
-          await supabase
-              .from('pets')
-              .select('animal_id')
-              .eq('user_id', userId)
-              .maybeSingle();
+      // Using .limit(1) to get only one pet's ID, as the UI expects a single currentPetID.
+      // This addresses the "multiple rows returned" error when a user has multiple pets.
+      final petRes = await supabase
+          .from('pets')
+          .select('animal_id')
+          .eq('user_id', userId)
+          .limit(1) // Limit to 1 pet, assuming the UI focuses on one pet at a time
+          .maybeSingle();
 
-      setState(() {
-        userName = userRes['name'] ?? 'User';
-        currentPetID = petRes?['animal_id'];
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          userName = userRes?['name'] ?? 'User';
+          currentPetID = petRes?['animal_id'];
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      print('Error fetching data: $e');
+      print('Error fetching data in PetHomePage: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load home page data: $e')),
+        );
+      }
     }
   }
 
@@ -340,7 +364,7 @@ class _PetHomePageState extends State<PetHomePage> {
                               children: [
                                 CameraCard(
                                   title: "Cage Camera",
-                                  emoji: "📷",
+                                  emoji: "�",
                                   onTap: () {
                                     Navigator.push(
                                       context,
