@@ -1,4 +1,5 @@
 // furfinder/lib/pages/customer_profile_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:furfinder/api/pet_api.dart'; // Reusing existing pet_api for pet profile
@@ -12,7 +13,7 @@ class CustomerProfilePage extends StatefulWidget {
 
 class _CustomerProfilePageState extends State<CustomerProfilePage> {
   Map<String, dynamic>? _customerData;
-  Map<String, dynamic>? _petData;
+  List<Map<String, dynamic>> _petsData = []; // Changed to a list
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -36,7 +37,6 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
       }
 
       // Fetch customer biodata
-      // Assuming 'users' table has columns: name, email, phone_number, address, role
       final customerResponse = await supabase
           .from('users')
           .select('name, email, phone_number, address')
@@ -49,26 +49,23 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
         _errorMessage = 'Customer data not found.';
       }
 
-      // Fetch pet biodata
-      // Using .limit(1) to get only one pet's ID and details, as the current UI displays a single pet profile.
-      final petResponse = await supabase
+      // Fetch ALL pet biodata for the user
+      final List<Map<String, dynamic>> petResponses = await supabase
           .from('pets')
           .select('animal_id, name, breed, age')
-          .eq('user_id', user.id)
-          .limit(1) // Ensure only one pet is fetched, even if the user has multiple
-          .maybeSingle();
+          .eq('user_id', user.id) as List<Map<String, dynamic>>; // Cast to List<Map<String, dynamic>>
 
-      if (petResponse != null) {
-        _petData = petResponse;
-      } else {
-        _errorMessage += '\nPet data not found or no pet registered.';
+      _petsData = petResponses; // Assign the list of pets
+
+      if (_petsData.isEmpty) {
+        _errorMessage += '\nNo pet registered yet.';
       }
 
     } catch (e) {
       _errorMessage = 'Error fetching data: $e';
       debugPrint('Error in _fetchProfileData (CustomerProfilePage): $e');
     } finally {
-      if (mounted) { // Ensure widget is still mounted before calling setState
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
@@ -91,14 +88,14 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
+          : _errorMessage.isNotEmpty && _customerData == null && _petsData.isEmpty
               ? Center(child: Text(_errorMessage, textAlign: TextAlign.center))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Customer Biodata Section
+                      // Customer Biodata Section (remains largely the same)
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -122,7 +119,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                         ),
                       ),
 
-                      // Pet Biodata Section
+                      // Pet Biodata Section (modified to display multiple pets)
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -136,16 +133,22 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.brown),
                               ),
                               const Divider(),
-                              _petData != null
-                                  ? Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        _buildProfileRow('Pet Name', _petData?['name'] ?? 'N/A'),
-                                        _buildProfileRow('Breed', _petData?['breed'] ?? 'N/A'),
-                                        _buildProfileRow('Age', (_petData?['age'] ?? 'N/A').toString()),
-                                      ],
-                                    )
-                                  : const Text('No pet registered yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                              if (_petsData.isNotEmpty)
+                                ..._petsData.map((pet) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildProfileRow('Pet Name', pet['name'] ?? 'N/A'),
+                                      _buildProfileRow('Breed', pet['breed'] ?? 'N/A'),
+                                      _buildProfileRow('Age', (pet['age'] ?? 'N/A').toString()),
+                                      const SizedBox(height: 10), // Add spacing between pets
+                                      if (_petsData.indexOf(pet) < _petsData.length - 1)
+                                        const Divider(), // Add divider between multiple pets
+                                    ],
+                                  );
+                                }).toList()
+                              else
+                                const Text('No pet registered yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
                             ],
                           ),
                         ),
@@ -153,7 +156,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                       
                       const SizedBox(height: 20), // Spacer
 
-                      // Payment Options Section
+                      // Payment Options Section (remains the same)
                       Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
