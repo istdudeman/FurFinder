@@ -12,6 +12,7 @@ import '../pages/activity_log_page.dart';
 import 'transactions_page.dart';
 import 'settings_page.dart';
 import '../pages/camera_playground.dart';
+import 'customer_profile_page.dart'; // Import the new customer profile page
 
 class PetHomePage extends StatefulWidget {
   final UserRole role;
@@ -157,6 +158,22 @@ class _PetHomePageState extends State<PetHomePage> {
                                   );
                                 },
                               ),
+                               if (!isAdmin) // Only show for customers
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.person, // User icon
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const CustomerProfilePage(),
+                                      ),
+                                    );
+                                  },
+                                  tooltip: 'My Profile',
+                                ),
                               IconButton(
                                 icon: const Icon(
                                   Icons.settings,
