@@ -94,18 +94,23 @@ Future<bool> insertBooking({
       print('⚠️ Tidak ditemukan rfid_tag dari pending_pets');
     }
 
-    // Insert booking
+    // Insert booking with 'pending_payment' status
     await supabase.from('bookings').insert({
       'booking_id': bookingId,
       'user_id': userId,
       'start_date': startDate.toIso8601String(),
       'end_date': endDate.toIso8601String(),
-      'status': 'confirmed',
+      'status': 'pending_payment', // Changed status to pending_payment
       'total_price': totalPrice,
       'animal_id': animalId,
       'cage_id': cageId,
       'services_id': serviceId,
     });
+
+    // IMPORTANT: The updateCageStatus should ideally happen only after
+    // the payment is manually confirmed by an administrator.
+    // Consider moving this logic to an admin-specific function or process.
+    // await updateCageStatus(cageId, animalId);
 
     return true;
   } catch (e) {
@@ -113,7 +118,6 @@ Future<bool> insertBooking({
     return false;
   }
 }
-
 
 Future<bool> updateCageStatus(String cageId, String animalId) async {
   try {
@@ -124,6 +128,29 @@ Future<bool> updateCageStatus(String cageId, String animalId) async {
     return true;
   } catch (e) {
     print('❌ Error updating cage: $e');
+    return false;
+  }
+}
+
+// New function to confirm payment by user
+Future<bool> confirmPaymentMade(String bookingId, String userId) async {
+  try {
+    // Update booking status to 'payment_confirmed_by_user'
+    await supabase.from('bookings').update({
+      'status': 'payment_confirmed_by_user',
+    }).eq('booking_id', bookingId).eq('user_id', userId); //
+
+    // Add activity log for admin to see
+    await supabase.from('activity_logs').insert({
+      'description': 'User has confirmed payment for booking $bookingId.',
+      'time_log': DateTime.now().toIso8601String(),
+      'pet_name': 'Payment Confirmation', // Placeholder, ideally fetch pet name
+      'animal_id': bookingId, // Using bookingId for context
+    });
+
+    return true;
+  } catch (e) {
+    print('❌ Error confirming payment: $e');
     return false;
   }
 }
