@@ -1,8 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Menambahkan data hewan dari pending_pets ke tabel pets
+
 Future<String?> addPetData({
-  required String userId,
+  required String animalId,
   required String name,
   required String breed,
   required int age,
@@ -16,20 +17,40 @@ Future<String?> addPetData({
       return 'Pengguna belum login.';
     }
 
-    // 2. Insert ke tabel pets (animal_id akan di-generate otomatis)
+    // Ambil satu rfid_tag dari pending_pets
+    final pendingPet = await supabase
+        .from('pending_pets')
+        .select('rfid_tag')
+        .limit(1)
+        .maybeSingle();
+
+    if (pendingPet == null || pendingPet['rfid_tag'] == null) {
+      return 'Data pending tidak ditemukan atau rfid_tag kosong.';
+    }
+
+    final rfidTag = pendingPet['rfid_tag'];
+
+    // Insert ke tabel pets
     await supabase.from('pets').insert({
+      'animal_id': animalId,
       'user_id': user.id,
       'name': name,
       'breed': breed,
       'age': age,
+      'rfid_tag': rfidTag,
     });
+
+    // Hapus entri dari pending_pets berdasarkan rfid_tag
+    await supabase
+        .from('pending_pets')
+        .delete()
+        .eq('rfid_tag', rfidTag);
 
     return null; // Berhasil
   } catch (e) {
     return 'Terjadi kesalahan: $e';
   }
 }
-
 Future<Map<String, dynamic>?> fetchPetProfileData(String petId) async {
   final supabase = Supabase.instance.client;
 

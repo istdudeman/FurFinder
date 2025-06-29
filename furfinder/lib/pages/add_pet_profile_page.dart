@@ -3,6 +3,8 @@ import 'package:furfinder/api/pet_api.dart';
 // import 'package:http/http.dart' as http;
 // import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+
 
 class AddPetProfilePage extends StatefulWidget {
   const AddPetProfilePage({super.key});
@@ -17,10 +19,11 @@ class _AddPetProfilePageState extends State<AddPetProfilePage> {
   final TextEditingController ageController = TextEditingController();
 
   Future<void> addPetProfile(String name, String breed, int age) async {
-    final userId = 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d'; // Ganti ke dinamis nanti
+    final uuid = Uuid();
+    final animalId = uuid.v4(); // generate ID unik untuk hewan
 
     final result = await addPetData(
-      userId: userId,
+      animalId: animalId,
       name: name,
       breed: breed,
       age: age,
