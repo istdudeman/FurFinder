@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
+import '../api/sensor_readings_api.dart'; // Import your new API
+import 'sensor_readings_page.dart'; // Import the new SensorReadingsPage
+
 // Assuming you still use this model
 class ActivityLogEntry {
   final String time;
@@ -30,11 +33,13 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
   bool _isLoading = true;
   String _petName = "Loading..."; // Placeholder for dynamic pet name
   String _petAddress = "Loading..."; // Placeholder for dynamic address
+  Map<String, dynamic>? _latestSensorReading; // Added for sensor summary
 
   @override
   void initState() {
     super.initState();
     _fetchActivityLogs();
+    _fetchSensorSummary(); // Call this to fetch sensor data
   }
 
   Future<void> _fetchActivityLogs() async {
@@ -58,43 +63,31 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
       }
 
       // Fetch user profile to get pet name and address
-      // --- CHANGE IS HERE: Use .maybeSingle() instead of .single() ---
       final userProfile = await supabase
-          .from('users') // Assuming 'users' table holds user profiles
-          .select('name, address, role') // Also fetch role for potential future use
+          .from('users')
+          .select('name, address, role')
           .eq('id', currentUserId)
-          .maybeSingle(); // Changed to maybeSingle()
+          .maybeSingle();
 
       // Set default values if user profile is not found
       String fetchedUserName = "Unknown User";
       String fetchedUserAddress = "Unknown Address";
-      String userRole = "customer"; // Default to customer if not found
+      // String userRole = "customer"; // Default to customer if not found (not strictly needed for this part)
 
       if (userProfile != null) {
         fetchedUserName = userProfile['name'] as String? ?? "Unknown User";
         fetchedUserAddress = userProfile['address'] as String? ?? "Unknown Address";
-        userRole = userProfile['role'] as String? ?? "customer";
+        // userRole = userProfile['role'] as String? ?? "customer";
       }
 
-      // Determine the animal_id to query based on user role
-      // Admins see all logs, customers see only their pet's logs
-      // This is primarily for the Flutter client-side filtering IF RLS is not fully trusted/understood.
-      // With proper RLS, the 'select()' query will automatically be filtered.
-      // However, for fetching the correct 'pet_name' for display, we need to know what to display.
-      
-      // Let's adjust the query to fetch relevant logs based on RLS (which handles filtering)
-      // and ensure 'pet_name' is correctly displayed.
-      
       final response = await supabase
           .from('activity_logs')
-          .select('time_log, description, pet_name, animal_id') // Ensure animal_id is selected if used for display
+          .select('time_log, description, pet_name, animal_id')
           .order('time_log', ascending: false)
           .limit(10);
 
       final fetchedLogs = response.map<ActivityLogEntry>((row) {
         final DateTime logTime = DateTime.parse(row['time_log']);
-        // Use the pet_name from the activity log row, or fallback to the fetched user name
-        // (though ideally pet_name in log is specific to the pet).
         final String displayPetName = row['pet_name'] as String? ?? fetchedUserName;
 
         return ActivityLogEntry(
@@ -131,6 +124,21 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  // New method to fetch sensor summary
+  Future<void> _fetchSensorSummary() async {
+    try {
+      final api = SensorReadingsApi(); // Instantiate your API
+      final readings = await api.fetchAllSensorReadings(); // Or filter by animalId
+      if (readings.isNotEmpty) {
+        setState(() {
+          _latestSensorReading = readings.first; // Get the most recent one
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching sensor summary: $e');
     }
   }
 
@@ -176,6 +184,19 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
                       color: Colors.white,
                     ),
                   ),
+                  const Spacer(), // Pushes the next icon to the end
+                  IconButton(
+                    icon: const Icon(Icons.sensors, color: Colors.white70), // New sensor icon
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SensorReadingsPage(), // Navigate to sensor readings page
+                        ),
+                      );
+                    },
+                    tooltip: 'View Sensor Readings',
+                  ),
                 ],
               ),
             ),
@@ -209,6 +230,17 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
                       color: Colors.white,
                     ),
                   ),
+                  if (_latestSensorReading != null) // Display sensor summary
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10.0),
+                      child: Text(
+                        'Latest RSSI: ${_latestSensorReading!['rssi']} dBm at ${DateFormat('HH:mm').format(DateTime.parse(_latestSensorReading!['timestamp']))}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.greenAccent.shade100,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
