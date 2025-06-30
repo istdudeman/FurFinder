@@ -18,6 +18,7 @@ class _TransactionPageState extends State<TransactionPage> {
   double _totalPrice = 0.0;
   String? _selectedCageId;
   String? _selectedServiceId;
+  String? _selectedServiceTypeName; // New variable to store the service type name
 
   List<dynamic> _cages = [];
   List<dynamic> _services = [];
@@ -27,12 +28,11 @@ class _TransactionPageState extends State<TransactionPage> {
   final TextEditingController _endDateController = TextEditingController();
 
   bool _isLoading = true;
-  String _errorMessage = ''; // Declare _errorMessage here
+  String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    // Initialize _selectedServiceId here, but it will be re-validated in _fetchInitialData
     _selectedServiceId = widget.serviceID;
     _fetchInitialData();
   }
@@ -48,20 +48,21 @@ class _TransactionPageState extends State<TransactionPage> {
         _services = services;
         _cages = cages;
 
-        // NEW LOGIC: Check if the initial serviceID exists in the fetched services
         if (widget.serviceID != null && _services.any((service) => service['services_id'] == widget.serviceID)) {
           _selectedServiceId = widget.serviceID;
+          // Set the service type name when initial service ID is found
+          _selectedServiceTypeName = _services.firstWhere((service) => service['services_id'] == widget.serviceID)['services_name'];
         } else {
-          // If the serviceID is not found or null, ensure no service is pre-selected
           _selectedServiceId = null;
+          _selectedServiceTypeName = null; // Clear if no service is pre-selected
         }
       });
       _calculatePrice();
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = "Error loading data: $e"; // Assign error message
-          _isLoading = false; // Set loading to false on error
+          _errorMessage = "Error loading data: $e";
+          _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error loading data: $e")),
@@ -79,13 +80,13 @@ class _TransactionPageState extends State<TransactionPage> {
   void _calculatePrice() {
     if (_startDate == null || _endDate == null || _selectedCageId == null || _selectedServiceId == null) {
       setState(() {
-        _totalPrice = 0; // Reset total price if any required field is missing
+        _totalPrice = 0;
       });
       return;
     }
 
     final days = _endDate!.difference(_startDate!).inDays;
-    if (days >= 0) { // Should be days >= 0
+    if (days >= 0) {
       final cage = _cages.firstWhere((c) => c['cage_id'] == _selectedCageId);
       final service = _services.firstWhere((s) => s['services_id'] == _selectedServiceId);
       final cagePricePerDay = (cage['price_per_day'] as num).toDouble();
@@ -127,9 +128,9 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   Future<void> _confirmBooking() async {
-    const userId = 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d'; // Consider fetching dynamically if possible
+    const userId = 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d';
 
-    if (_startDate == null || _endDate == null || _selectedCageId == null || _selectedServiceId == null || _totalPrice <= 0) {
+    if (_startDate == null || _endDate == null || _selectedCageId == null || _selectedServiceId == null || _totalPrice <= 0 || _selectedServiceTypeName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields and ensure the dates are correct.")),
       );
@@ -156,6 +157,7 @@ class _TransactionPageState extends State<TransactionPage> {
         petId: widget.petID,
         cageId: _selectedCageId!,
         serviceId: _selectedServiceId!,
+        serviceTypeName: _selectedServiceTypeName!, // Pass the new serviceTypeName
         startDate: _startDate!,
         endDate: _endDate!,
         totalPrice: _totalPrice,
@@ -163,11 +165,6 @@ class _TransactionPageState extends State<TransactionPage> {
     );
 
     if (success) {
-      // The updateCageStatus is intentionally commented out in transaction_api.dart
-      // for manual admin confirmation. If it were to be updated automatically,
-      // it would be called here.
-      // final updateSuccess = await updateCageStatus(_selectedCageId!, widget.petID);
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Booking successful! Payment confirmation pending admin verification.")),
       );
@@ -191,8 +188,8 @@ class _TransactionPageState extends State<TransactionPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty // Use _errorMessage here
-              ? Center(child: Text(_errorMessage)) // Display error message
+          : _errorMessage.isNotEmpty
+              ? Center(child: Text(_errorMessage))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -214,6 +211,8 @@ class _TransactionPageState extends State<TransactionPage> {
                         onChanged: (value) {
                           setState(() {
                             _selectedServiceId = value;
+                            // Update the service type name when service is changed
+                            _selectedServiceTypeName = _services.firstWhere((s) => s['services_id'] == value)['services_name'];
                             _calculatePrice();
                           });
                         },
@@ -221,7 +220,6 @@ class _TransactionPageState extends State<TransactionPage> {
                           labelText: 'Service',
                           border: OutlineInputBorder(),
                         ),
-                        // Add hint text for when no value is selected
                         hint: const Text('Select a Service'),
                       ),
                       const SizedBox(height: 20),
@@ -244,7 +242,7 @@ class _TransactionPageState extends State<TransactionPage> {
                           labelText: 'Cage',
                           border: OutlineInputBorder(),
                         ),
-                        hint: const Text('Select a Cage'), // Add hint for cage selection
+                        hint: const Text('Select a Cage'),
                       ),
                       const SizedBox(height: 20),
 

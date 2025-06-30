@@ -1,3 +1,4 @@
+// furfinder/lib/widgets/profile_card.dart
 import 'package:flutter/material.dart';
 import '../api/pet_api.dart'; // Tambahkan ini
 
@@ -21,23 +22,73 @@ class _ProfileCardState extends State<ProfileCard> {
   }
 
   Future<void> loadData() async {
-    final data = await fetchPetProfileData(widget.petID);
-
-    if (data == null) {
-      print("Data tidak ditemukan atau error.");
+    // Handle empty petID explicitly
+    if (widget.petID.isEmpty) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          petData = null; // Ensure petData is null if no valid petID
+        });
+      }
+      print("ProfileCard: petID is empty, no data fetched.");
       return;
     }
 
-    setState(() {
-      petData = data;
-      isLoading = false;
-    });
+    final data = await fetchPetProfileData(widget.petID);
+
+    if (mounted) {
+      setState(() {
+        petData = data;
+        isLoading = false;
+      });
+    }
+
+    if (data == null) {
+      print("ProfileCard: Data tidak ditemukan atau error untuk petID: ${widget.petID}.");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || petData == null) {
+    if (isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    // Display a placeholder or specific message if petData is null
+    if (petData == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFD9D1BD),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.blueAccent, width: 2),
+        ),
+        child: const Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: Colors.white,
+              child: Text('❓', style: TextStyle(fontSize: 24)),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No Pet Data Available',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Please add a pet profile in the homepage.',
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return Container(

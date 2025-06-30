@@ -37,6 +37,7 @@ Future<bool> insertBooking({
   required String userId,
   required String cageId,
   required String serviceId,
+  required String serviceTypeName, // New required parameter
   required DateTime startDate,
   required DateTime endDate,
   required double totalPrice,
@@ -45,7 +46,6 @@ Future<bool> insertBooking({
   final bookingId = uuid.v4();
 
   try {
-    // Ambil user yang sedang login
     final currentUser = supabase.auth.currentUser;
 
     if (currentUser == null) {
@@ -55,7 +55,6 @@ Future<bool> insertBooking({
 
     final userId = currentUser.id;
 
-    // Verifikasi animal_id di tabel pets
     final petResponse = await supabase
         .from('pets')
         .select('animal_id')
@@ -69,7 +68,6 @@ Future<bool> insertBooking({
 
     final animalId = petResponse['animal_id'];
 
-    // Ambil rfid_tag terbaru dari pending_pets
     final pendingPet = await supabase
         .from('pending_pets')
         .select('rfid_tag')
@@ -80,12 +78,10 @@ Future<bool> insertBooking({
     if (pendingPet != null && pendingPet['rfid_tag'] != null) {
       final rfidTag = pendingPet['rfid_tag'];
 
-      // Update pets.rfid_tag
       await supabase.from('pets').update({
         'rfid_tag': rfidTag,
       }).eq('animal_id', petId);
 
-      // Hapus rfid_tag dari pending_pets setelah berhasil diinput
       await supabase
           .from('pending_pets')
           .delete()
@@ -94,23 +90,18 @@ Future<bool> insertBooking({
       print('⚠️ Tidak ditemukan rfid_tag dari pending_pets');
     }
 
-    // Insert booking with 'pending_payment' status
     await supabase.from('bookings').insert({
       'booking_id': bookingId,
       'user_id': userId,
       'start_date': startDate.toIso8601String(),
       'end_date': endDate.toIso8601String(),
-      'status': 'pending_payment', // Changed status to pending_payment
+      'status': 'pending_payment',
       'total_price': totalPrice,
       'animal_id': animalId,
       'cage_id': cageId,
       'services_id': serviceId,
+      'service_type_name': serviceTypeName, // Insert the new column data
     });
-
-    // IMPORTANT: The updateCageStatus should ideally happen only after
-    // the payment is manually confirmed by an administrator.
-    // Consider moving this logic to an admin-specific function or process.
-    // await updateCageStatus(cageId, animalId);
 
     return true;
   } catch (e) {
@@ -132,25 +123,55 @@ Future<bool> updateCageStatus(String cageId, String animalId) async {
   }
 }
 
-// New function to confirm payment by user
 Future<bool> confirmPaymentMade(String bookingId, String userId) async {
   try {
-    // Update booking status to 'payment_confirmed_by_user'
     await supabase.from('bookings').update({
       'status': 'payment_confirmed_by_user',
-    }).eq('booking_id', bookingId).eq('user_id', userId); //
+    }).eq('booking_id', bookingId).eq('user_id', userId);
 
-    // Add activity log for admin to see
     await supabase.from('activity_logs').insert({
       'description': 'User has confirmed payment for booking $bookingId.',
       'time_log': DateTime.now().toIso8601String(),
-      'pet_name': 'Payment Confirmation', // Placeholder, ideally fetch pet name
-      'animal_id': bookingId, // Using bookingId for context
+      'pet_name': 'Payment Confirmation',
+      'animal_id': bookingId,
     });
 
     return true;
   } catch (e) {
     print('❌ Error confirming payment: $e');
     return false;
+  }
+}
+
+// Function to fetch all bookings for admin view
+Future<List<Map<String, dynamic>>> fetchAllBookingsForAdmin() async {
+  try {
+    final response = await supabase
+        .from('bookings')
+        .select('*, pets(name), services(services_name), cage(cage_number)')
+        .order('start_date', ascending: false);
+
+    print('✅ All bookings fetched for admin successfully.');
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    print('❌ Error fetching all bookings for admin: $e');
+    return [];
+  }
+}
+
+// Function to fetch bookings by service ID for admin view
+Future<List<Map<String, dynamic>>> fetchBookingsByServiceId(String serviceId) async {
+  try {
+    final response = await supabase
+        .from('bookings')
+        .select('*, pets(name), services(services_name), cage(cage_number)')
+        .eq('services_id', serviceId)
+        .order('start_date', ascending: false);
+
+    print('✅ Bookings for service ID $serviceId fetched successfully.');
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    print('❌ Error fetching bookings for service ID $serviceId: $e');
+    return [];
   }
 }
