@@ -26,6 +26,7 @@ class PetHomePage extends StatefulWidget {
 class _PetHomePageState extends State<PetHomePage> {
   final supabase = Supabase.instance.client;
   String userName = '';
+  String userId = '';
   String? currentPetID;
   bool isLoading = true;
 
@@ -49,7 +50,7 @@ class _PetHomePageState extends State<PetHomePage> {
         return;
       }
 
-      final userId = user.id;
+      userId = user.id;
       debugPrint('Fetching user data for userId: $userId');
 
       // Ambil data nama user dari tabel `users`
@@ -372,7 +373,7 @@ class _PetHomePageState extends State<PetHomePage> {
                                         builder:
                                             (_) => CameraViewPage(
                                               cameraTitle: "Cage Camera",
-                                              petID: currentPetID ?? '',
+                                              userId: userId,
                                             ),
                                       ),
                                     );
@@ -405,7 +406,7 @@ class _PetHomePageState extends State<PetHomePage> {
                                         builder:
                                             (_) => CameraViewPage(
                                               cameraTitle: "Playground 2",
-                                              petID: currentPetID ?? '',
+                                              userId: userId,
                                             ),
                                       ),
                                     );
