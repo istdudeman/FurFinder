@@ -334,7 +334,7 @@ class _PetHomePageState extends State<PetHomePage> {
                                 role: widget.role,
                                 petID: currentPetID ?? '',
                                 serviceID:
-                                    "e2c3b5a1-4f89-4b1a-9c2e-7d6f5c8a4b3d",
+                                    "33287386-25c7-4a0b-b00a-50e7b0cbafba",
                               ),
                               ServiceCard(
                                 title: "Hair\ncut",
@@ -343,7 +343,7 @@ class _PetHomePageState extends State<PetHomePage> {
                                 role: widget.role,
                                 petID: currentPetID ?? '',
                                 serviceID:
-                                    "f4a5c6b2-8e9d-4f7c-a1b3-6d5e4f3a2b1c",
+                                    "29d6de48-9611-40e2-a453-e4a181be69bd",
                               ),
                               const PlaceholderCard(emoji: '🐕'),
                               const PlaceholderCard(emoji: '🐈'),

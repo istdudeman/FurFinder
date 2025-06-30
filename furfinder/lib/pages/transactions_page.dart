@@ -18,6 +18,7 @@ class _TransactionPageState extends State<TransactionPage> {
   double _totalPrice = 0.0;
   String? _selectedCageId;
   String? _selectedServiceId;
+  String? _selectedServiceTypeName; // New variable to store the service type name
 
   List<dynamic> _cages = [];
   List<dynamic> _services = [];
@@ -27,6 +28,7 @@ class _TransactionPageState extends State<TransactionPage> {
   final TextEditingController _endDateController = TextEditingController();
 
   bool _isLoading = true;
+  String _errorMessage = '';
 
   @override
   void initState() {
@@ -45,10 +47,23 @@ class _TransactionPageState extends State<TransactionPage> {
         _petDetails = pet;
         _services = services;
         _cages = cages;
+
+        if (widget.serviceID != null && _services.any((service) => service['services_id'] == widget.serviceID)) {
+          _selectedServiceId = widget.serviceID;
+          // Set the service type name when initial service ID is found
+          _selectedServiceTypeName = _services.firstWhere((service) => service['services_id'] == widget.serviceID)['services_name'];
+        } else {
+          _selectedServiceId = null;
+          _selectedServiceTypeName = null; // Clear if no service is pre-selected
+        }
       });
       _calculatePrice();
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _errorMessage = "Error loading data: $e";
+          _isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error loading data: $e")),
         );
@@ -64,11 +79,14 @@ class _TransactionPageState extends State<TransactionPage> {
 
   void _calculatePrice() {
     if (_startDate == null || _endDate == null || _selectedCageId == null || _selectedServiceId == null) {
+      setState(() {
+        _totalPrice = 0;
+      });
       return;
     }
 
     final days = _endDate!.difference(_startDate!).inDays;
-    if (days > 0) {
+    if (days >= 0) {
       final cage = _cages.firstWhere((c) => c['cage_id'] == _selectedCageId);
       final service = _services.firstWhere((s) => s['services_id'] == _selectedServiceId);
       final cagePricePerDay = (cage['price_per_day'] as num).toDouble();
@@ -112,7 +130,7 @@ class _TransactionPageState extends State<TransactionPage> {
   Future<void> _confirmBooking() async {
     const userId = 'e993c4f1-b374-4cf9-af7a-c1a683f2f29d';
 
-    if (_startDate == null || _endDate == null || _selectedCageId == null || _selectedServiceId == null || _totalPrice <= 0) {
+    if (_startDate == null || _endDate == null || _selectedCageId == null || _selectedServiceId == null || _totalPrice <= 0 || _selectedServiceTypeName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields and ensure the dates are correct.")),
       );
@@ -136,9 +154,10 @@ class _TransactionPageState extends State<TransactionPage> {
     }
 
       final success = await insertBooking(
-        petId: widget.petID, // ini diasumsikan sebagai TAG
+        petId: widget.petID,
         cageId: _selectedCageId!,
         serviceId: _selectedServiceId!,
+        serviceTypeName: _selectedServiceTypeName!, // Pass the new serviceTypeName
         startDate: _startDate!,
         endDate: _endDate!,
         totalPrice: _totalPrice,
@@ -146,18 +165,12 @@ class _TransactionPageState extends State<TransactionPage> {
     );
 
     if (success) {
-      final updateSuccess = await updateCageStatus(_selectedCageId!, widget.petID);
-
-      if (updateSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Booking successful!")),
-        );
-        await Future.delayed(const Duration(seconds: 1));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Booking successful! Payment confirmation pending admin verification.")),
+      );
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
         Navigator.of(context).pop();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Booking saved, but failed to update cage.")),
-        );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -175,111 +188,117 @@ class _TransactionPageState extends State<TransactionPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_petDetails != null) ...[
-                    Text("Pet: ${_petDetails!['name']}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
-                  ],
-
-                  DropdownButtonFormField<String>(
-                    value: _selectedServiceId,
-                    items: _services.map<DropdownMenuItem<String>>((service) {
-                      return DropdownMenuItem<String>(
-                        value: service['services_id'],
-                        child: Text(service['services_name']),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedServiceId = value;
-                        _calculatePrice();
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Service',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  DropdownButtonFormField<String>(
-                    value: _selectedCageId,
-                    items: _cages.map<DropdownMenuItem<String>>((cage) {
-                      return DropdownMenuItem<String>(
-                        value: cage['cage_id'],
-                        child: Text("Cage ${cage['cage_number']} (${cage['animal_type']})"),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCageId = value;
-                        _calculatePrice();
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Cage',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  Row(
+          : _errorMessage.isNotEmpty
+              ? Center(child: Text(_errorMessage))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _startDateController,
-                          decoration: const InputDecoration(
-                            labelText: 'Start Date',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.calendar_today),
+                      if (_petDetails != null) ...[
+                        Text("Pet: ${_petDetails!['name']}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 20),
+                      ],
+
+                      DropdownButtonFormField<String>(
+                        value: _selectedServiceId,
+                        items: _services.map<DropdownMenuItem<String>>((service) {
+                          return DropdownMenuItem<String>(
+                            value: service['services_id'],
+                            child: Text(service['services_name']),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedServiceId = value;
+                            // Update the service type name when service is changed
+                            _selectedServiceTypeName = _services.firstWhere((s) => s['services_id'] == value)['services_name'];
+                            _calculatePrice();
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Service',
+                          border: OutlineInputBorder(),
+                        ),
+                        hint: const Text('Select a Service'),
+                      ),
+                      const SizedBox(height: 20),
+
+                      DropdownButtonFormField<String>(
+                        value: _selectedCageId,
+                        items: _cages.map<DropdownMenuItem<String>>((cage) {
+                          return DropdownMenuItem<String>(
+                            value: cage['cage_id'],
+                            child: Text("Cage ${cage['cage_number']} (${cage['animal_type']})"),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCageId = value;
+                            _calculatePrice();
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Cage',
+                          border: OutlineInputBorder(),
+                        ),
+                        hint: const Text('Select a Cage'),
+                      ),
+                      const SizedBox(height: 20),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _startDateController,
+                              decoration: const InputDecoration(
+                                labelText: 'Start Date',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.calendar_today),
+                              ),
+                              readOnly: true,
+                              onTap: () => _selectDate(context, true),
+                            ),
                           ),
-                          readOnly: true,
-                          onTap: () => _selectDate(context, true),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _endDateController,
+                              decoration: const InputDecoration(
+                                labelText: 'End Date',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.calendar_today),
+                              ),
+                              readOnly: true,
+                              onTap: () => _selectDate(context, false),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      Center(
+                        child: Text(
+                          'Total Price: \$${_totalPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _endDateController,
-                          decoration: const InputDecoration(
-                            labelText: 'End Date',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.calendar_today),
+                      const SizedBox(height: 30),
+
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: _confirmBooking,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.brown[800],
+                            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                            textStyle: const TextStyle(fontSize: 16),
                           ),
-                          readOnly: true,
-                          onTap: () => _selectDate(context, false),
+                          child: const Text('Confirm Booking', style: TextStyle(color: Colors.white)),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-
-                  Center(
-                    child: Text(
-                      'Total Price: \$${_totalPrice.toStringAsFixed(2)}',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: _confirmBooking,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.brown[800],
-                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        textStyle: const TextStyle(fontSize: 16),
-                      ),
-                      child: const Text('Confirm Booking', style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
     );
   }
 
