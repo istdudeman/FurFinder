@@ -1,3 +1,4 @@
+// furfinder/lib/api/pet_api.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Menambahkan data hewan dari pending_pets ke tabel pets
@@ -109,4 +110,20 @@ String _monthName(int month) {
     'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
   ];
   return months[month - 1];
+}
+
+// NEW FUNCTION: Fetch all pets for a given user (or all pets if userId is not used)
+Future<List<Map<String, dynamic>>> fetchAllUserPets(String userId) async {
+  final supabase = Supabase.instance.client;
+  try {
+    final response = await supabase
+        .from('pets')
+        .select('animal_id, name, breed'); // Select pet ID and name for the list
+        // .eq('user_id', userId); // Uncomment if you want to filter by the current logged-in user's pets
+
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    print('❌ Error fetching all user pets: $e');
+    return [];
+  }
 }
