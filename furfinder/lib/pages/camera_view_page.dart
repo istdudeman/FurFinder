@@ -33,7 +33,24 @@ class _CameraViewPageState extends State<CameraViewPage> {
 
     if (result != null) {
       setState(() {
-        streamUrl = result['url'];
+        String? rawUrl = result['url'];
+        if (rawUrl != null) {
+          // Use a regex to find the actual URL starting with http or https.
+          // This is more robust against invisible characters or extra newlines
+          // that might precede the actual URL string.
+          RegExp urlRegex = RegExp(r'(https?://\S+)');
+          Match? match = urlRegex.firstMatch(rawUrl);
+          if (match != null) {
+            streamUrl = match.group(0); // Get the matched URL string
+          } else {
+            // If regex doesn't find a valid URL, set streamUrl to null
+            streamUrl = null;
+            debugPrint("⚠️ Regex could not find a valid URL in: $rawUrl");
+          }
+        } else {
+          streamUrl = null;
+        }
+        
         petName = result['name'];
         isLoading = false;
       });
@@ -69,9 +86,41 @@ class _CameraViewPageState extends State<CameraViewPage> {
                     Expanded(
                       child: Mjpeg(
                         isLive: true,
-                        stream: streamUrl!,
+                        // The streamUrl should now be clean, but adding trim() here again
+                        // as a final safeguard doesn't hurt.
+                        stream: streamUrl!.trim(), 
                         error: (context, error, stack) {
-                          return const Text('Error loading stream');
+                          debugPrint('MJPEG Stream Error: $error');
+                          debugPrint('Stack Trace: $stack');
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                                  const SizedBox(height: 10),
+                                  const Text(
+                                    'Error loading stream:',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    error.toString(), // Display the actual error message
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: Colors.black87, fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  const Text(
+                                    'Please ensure the camera is on and your device is on the same network.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),
