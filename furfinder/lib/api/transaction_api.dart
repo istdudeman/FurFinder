@@ -175,3 +175,54 @@ Future<List<Map<String, dynamic>>> fetchBookingsByServiceId(String serviceId) as
     return [];
   }
 }
+
+Future<void> confirmBookingDone(String bookingId) async {
+  try {
+    // 1️⃣ Update status service di booking
+    final updatedBooking = await supabase
+        .from('bookings')
+        .update({'service_status': 'completed'})
+        .eq('booking_id', bookingId)
+        .select('animal_id, services_id') // ambil animal_id & service_id untuk log
+        .maybeSingle();
+
+    if (updatedBooking == null) {
+      throw Exception('Booking tidak ditemukan atau gagal update');
+    }
+
+    final animalId = updatedBooking['animal_id'] as String;
+    final serviceId = updatedBooking['services_id'] as String;
+
+    // 2️⃣ Ambil nama hewan
+    final pet = await supabase
+        .from('pets')
+        .select('name')
+        .eq('animal_id', animalId)
+        .maybeSingle();
+
+    final petName = pet?['name'] ?? 'Unknown Pet';
+
+    // 3️⃣ Ambil nama service
+    final service = await supabase
+        .from('services')
+        .select('services_name')
+        .eq('services_id', serviceId)
+        .maybeSingle();
+
+    final serviceName = service?['services_name'] ?? 'Unknown Service';
+
+    // 4️⃣ Insert ke activity_logs
+    await supabase.from('activity_logs').insert({
+      'time_log': DateTime.now().toIso8601String(),
+      'description': 'sudah selesai $serviceName',
+      'pet_name': petName,
+      'animal_id': animalId,
+    });
+
+    print("✅ Booking $bookingId updated & activity log created for $petName");
+  } catch (e) {
+    print("❌ Error in confirmBookingDone: $e");
+    rethrow;
+  }
+}
+

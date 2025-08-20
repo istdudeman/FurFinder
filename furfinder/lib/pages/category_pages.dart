@@ -83,6 +83,24 @@ class _CategoryPageState extends State<CategoryPage> {
     }
   }
 
+  Future<void> _confirmBooking(String bookingId) async {
+    try {
+      await transaction_api.confirmBookingDone(bookingId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Booking confirmed as done ✅")),
+        );
+        _fetchAdminBookings(); // Refresh bookings
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error confirming booking: $e")),
+        );
+      }
+    }
+  }
+
   bool get isCustomer => widget.role == UserRole.customer;
   bool get isAdmin => widget.role == UserRole.admin; // Helper for admin role
 
@@ -207,13 +225,23 @@ class _CategoryPageState extends State<CategoryPage> {
                                         final endDate = DateFormat('yyyy-MM-dd').format(DateTime.parse(booking['end_date']));
                                         final status = booking['status'] ?? 'N/A';
                                         final totalPrice = (booking['total_price'] as num).toStringAsFixed(2);
+                                        final bookingId = booking['booking_id'].toString();
+                                        final service_status = booking['service_status'] ?? 'N/A';
 
                                         return Card(
                                           margin: const EdgeInsets.symmetric(vertical: 5),
                                           child: ListTile(
                                             title: Text('$petName - Cage $cageNumber'),
-                                            subtitle: Text('Dates: $startDate to $endDate\nStatus: $status\nPrice: \$$totalPrice'),
+                                            subtitle: Text(
+                                              'Dates: $startDate to $endDate\nStatus: $status\nPrice: \$$totalPrice\nService Status : $service_status',
+                                            ),
                                             isThreeLine: true,
+                                            trailing: service_status != 'completed'
+                                                ? ElevatedButton(
+                                                    onPressed: () => _confirmBooking(bookingId),
+                                                    child: const Text("Confirm Done"),
+                                                  )
+                                                : const Icon(Icons.check_circle, color: Colors.green),
                                           ),
                                         );
                                       }).toList(),
